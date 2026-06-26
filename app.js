@@ -296,6 +296,7 @@ function navTo(id,opts){opts=opts||{};
 }
 window.navTo=navTo;
 window.addEventListener("popstate",e=>{
+  if($("#navMenu")&&$("#navMenu").classList.contains("open")){closeNav();return;}
   if($("#tools").classList.contains("open")){closeTools();return;}
   if($("#pop").classList.contains("open")){popClose();return;}
   const id=(location.hash||"#home").slice(1);navTo(id,{fromPopstate:true});
@@ -1117,10 +1118,11 @@ function runSearch(q){q=q.trim();const out=$("#searchResults");
 }
 
 /* ============================================================
-   UNIVERSAL: TRANSLATE — Google Translate proxy (mirrors Twisted)
-   The globe opens a language picker; choosing a language opens the app
-   through Google Translate's proxy in a new tab. Protected game terms in
-   the app carry translate="no", so core MERCS terms stay in English.
+   UNIVERSAL: TRANSLATE — in-page Google Translate Element
+   The globe opens a language picker; choosing a language translates the
+   live DOM in place (no reload). The widget script is lazy-loaded on first
+   use so offline-first load is never impacted. Protected game terms carry
+   translate="no", so core MERCS terms stay in English.
    ============================================================ */
 const LANGS=[
  ["af","Afrikaans"],["sq","Albanian"],["ar","Arabic"],["hy","Armenian"],["az","Azerbaijani"],
@@ -1136,24 +1138,59 @@ const LANGS=[
  ["es","Spanish"],["sw","Swahili"],["sv","Swedish"],["ta","Tamil"],["te","Telugu"],
  ["th","Thai"],["tr","Turkish"],["uk","Ukrainian"],["ur","Urdu"],["vi","Vietnamese"],["cy","Welsh"]
 ];
-function translateSiteUrl(){
-  return window.location.hostname
-    ? (window.location.origin+window.location.pathname)
-    : "https://digirunestudios.github.io/MERCS/";
+/* Google Translate Element: lazy-load the widget once, on first globe use. */
+let _gteState="idle"; // idle | loading | ready | failed
+function _gteInject(){
+  if(_gteState==="loading"||_gteState==="ready")return;
+  _gteState="loading";
+  window.googleTranslateElementInit=function(){
+    try{
+      new google.translate.TranslateElement({pageLanguage:"en",autoDisplay:false},"gte");
+      _gteState="ready";
+    }catch(e){_gteState="failed";}
+  };
+  const sc=document.createElement("script");
+  sc.src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit";
+  sc.onerror=()=>{_gteState="failed";};
+  document.head.appendChild(sc);
 }
-function openTranslate(code){
-  const url="https://translate.google.com/translate?sl=en&tl="+code+"&u="+encodeURIComponent(translateSiteUrl());
-  window.open(url,"_blank","noopener");
+/* Poll for Google's hidden <select.goog-te-combo>, then set the language and
+   dispatch 'change' so the page translates in place. Reverting uses '' / 'en'. */
+function _gteApply(code){
+  const deadline=Date.now()+3500;
+  const tryApply=()=>{
+    const sel=document.querySelector(".goog-te-combo");
+    if(sel){
+      sel.value=code;
+      sel.dispatchEvent(new Event("change"));
+      return true;
+    }
+    return false;
+  };
+  if(tryApply())return;
+  const poll=setInterval(()=>{
+    if(_gteState==="failed"){clearInterval(poll);toast("Translation needs an internet connection.");return;}
+    if(tryApply()||Date.now()>deadline){
+      clearInterval(poll);
+      if(!document.querySelector(".goog-te-combo"))toast("Translation needs an internet connection.");
+    }
+  },120);
+}
+function setTranslate(code){
+  _gteInject();
+  if(_gteState==="failed"){toast("Translation needs an internet connection.");return;}
+  _gteApply(code);
   popClose();
 }
-window.openTranslate=openTranslate;
+window.setTranslate=setTranslate;
 function translatePicker(){
-  const opts=LANGS.map(([code,name])=>`<button class="langopt" data-lang="${esc(code)}" translate="no">${esc(name)}</button>`).join("");
+  const opts=`<button class="langopt" data-lang="" translate="no">Show original (English)</button>`
+    +LANGS.map(([code,name])=>`<button class="langopt" data-lang="${esc(code)}" translate="no">${esc(name)}</button>`).join("");
   popOpen(`<div translate="no"><h4>Translate</h4>
-    <p class="small muted" style="margin:.1rem 0 .6rem">Opens MERCS in Google Translate. Core game terms stay in English.</p>
+    <p class="small muted" style="margin:.1rem 0 .6rem">Translates this page in place. Core game terms stay in English. Needs an internet connection.</p>
     <div class="langlist" id="langList">${opts}</div>
     <div class="row" style="margin-top:.8rem"><button class="btn ghost sm" onclick="popClose()">Close</button></div></div>`);
-  $$("#langList .langopt").forEach(b=>b.onclick=()=>openTranslate(b.dataset.lang));
+  $$("#langList .langopt").forEach(b=>b.onclick=()=>setTranslate(b.dataset.lang));
 }
 window.translatePicker=translatePicker;
 
@@ -1173,6 +1210,48 @@ function openAbout(){
   $("#abShop").onclick=shopMercs;
 }
 window.openAbout=openAbout;
+
+/* ============================================================
+   UNIVERSAL: MOBILE NAV MENU (hamburger — small screens)
+   Mirrors the Twisted pattern: full-screen overlay listing all 8 sections
+   as large tap targets, plus quick rows for Search / Tools / Translate /
+   Low-light. Opening pushes history so Android Back closes it first.
+   ============================================================ */
+function buildNavMenu(){
+  const list=$("#navList");if(!list)return;
+  list.innerHTML=TABS.map(t=>`<button class="navlink" data-nav="${t.id}"><span class="nico">${t.ico}</span><span>${esc(t.t)}</span></button>`).join("");
+  $$("#navList .navlink").forEach(b=>b.onclick=()=>{navTo(b.dataset.nav);closeNav();});
+  const acts=$("#navActs");
+  if(acts){
+    acts.innerHTML=`
+      <button class="navact" data-act="search"><span class="nico">${ICO.search}</span><span>Search</span></button>
+      <button class="navact" data-act="tools"><span class="nico">${ICO.tools}</span><span>Tools</span></button>
+      <button class="navact" data-act="translate"><span class="nico">${ICO.globe}</span><span>Translate</span></button>
+      <button class="navact" data-act="theme"><span class="nico">${ICO.book}</span><span>Low-light</span></button>`;
+    $$("#navActs .navact").forEach(b=>b.onclick=()=>{const a=b.dataset.act;closeNav();
+      if(a==="search")openSearch();
+      else if(a==="tools")openToolsMenu();
+      else if(a==="translate")translatePicker();
+      else if(a==="theme")toggleTheme();});
+  }
+}
+function syncNavActive(){$$("#navList .navlink").forEach(b=>b.classList.toggle("on",b.dataset.nav===CURRENT_TAB));}
+function openNav(){
+  const m=$("#navMenu");if(!m)return;
+  syncNavActive();
+  m.classList.add("open");
+  const hb=$("#navHamBtn");if(hb){hb.classList.add("in");hb.setAttribute("aria-expanded","true");}
+  if(!m._pushed){history.pushState({nav:true},"","#menu");m._pushed=true;}
+}
+window.openNav=openNav;
+function closeNav(){
+  const m=$("#navMenu");if(!m)return;
+  m.classList.remove("open");
+  const hb=$("#navHamBtn");if(hb){hb.classList.remove("in");hb.setAttribute("aria-expanded","false");}
+  if(m._pushed){m._pushed=false;
+    if(location.hash==="#menu")history.replaceState({tab:CURRENT_TAB},"","#"+(CURRENT_TAB||"home"));}
+}
+window.closeNav=closeNav;
 
 /* ============================================================
    SWIPE between tabs (55px X / 80px Y / 400ms; ignore in modals/inputs/scroll)
@@ -1333,18 +1412,24 @@ function boot(){
   $("#toolsClose").onclick=closeTools;
   $("#toolsBack").onclick=openToolsMenu;
   $("#installBtn").onclick=doInstall;
+  // mobile hamburger nav
+  buildNavMenu();
+  const _ham=$("#navHamBtn");if(_ham)_ham.onclick=openNav;
+  const _nc=$("#navCloseBtn");if(_nc)_nc.onclick=closeNav;
+  const _nm=$("#navMenu");if(_nm)_nm.onclick=e=>{if(e.target.id==="navMenu")closeNav();};
   // pop backdrop dismiss
   $("#pop").onclick=e=>{if(e.target.id==="pop")popClose();};
   $("#tools").onclick=e=>{if(e.target.id==="tools")closeTools();};
   $("#search").onclick=e=>{if(e.target.id==="search")closeSearch();};
   // Esc handling
   document.addEventListener("keydown",e=>{if(e.key==="Escape"){
-    if($("#pop").classList.contains("open"))popClose();
+    if($("#navMenu")&&$("#navMenu").classList.contains("open"))closeNav();
+    else if($("#pop").classList.contains("open"))popClose();
     else if($("#search").classList.contains("open"))closeSearch();
     else if($("#tools").classList.contains("open"))closeTools();
   }});
-  // app stays translate="no" by default (protected terms); the globe opens the Google Translate proxy
-  document.documentElement.setAttribute("translate","no");
+  // NOTE: do NOT set translate="no" on <html> — that would block the in-page Google
+  // Translate Element entirely. Per-element translate="no" wraps still protect MERCS terms.
   // initial route
   const id=(location.hash||"#home").slice(1);
   const start=TAB_IDS.includes(id)?id:"home";

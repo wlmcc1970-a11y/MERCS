@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en" translate="no">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
@@ -9,6 +9,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="MERCS">
+<meta name="google" content="translate">
 <title>MERCS Companion</title>
 <script>
 /* Apply saved low-light theme before first paint (no flash). */
@@ -517,6 +518,66 @@ footer.src{padding-bottom:calc(1.4rem + var(--tabbar-h) + var(--safe-b))}
 
 .rsub{font-family:var(--font-disp);font-size:1rem;letter-spacing:.04em;color:var(--olive-d);text-transform:uppercase;margin:1.15rem 0 .35rem;padding-bottom:.2rem;border-bottom:1px solid var(--line2)}
 .rulebook .rsub{font-size:1.02rem}
+
+/* ===== FIX: small-screen hamburger nav + mobile menu overlay ===== */
+.navham{display:none;align-items:center;justify-content:center;width:44px;height:44px;min-height:44px;
+  border:1px solid rgba(255,255,255,.4);background:rgba(0,0,0,.16);color:#fbf7ea;border-radius:9px;padding:0;flex:none}
+.navham svg{width:22px;height:22px}
+.navham:active{background:rgba(0,0,0,.32)}
+.navham.in{background:var(--orange);color:#1c1d1a;border-color:var(--orange-d)}
+#navMenu{position:fixed;inset:0;z-index:120;display:none;flex-direction:column;
+  padding:max(.9rem,var(--safe-t)) max(1rem,env(safe-area-inset-right,0px)) max(1.1rem,var(--safe-b)) max(1rem,env(safe-area-inset-left,0px));
+  background:linear-gradient(180deg,rgba(21,22,15,.97),rgba(40,40,20,.97));-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);
+  overflow-y:auto;-webkit-overflow-scrolling:touch;animation:fade .2s ease}
+#navMenu.open{display:flex}
+.navhead{display:flex;align-items:center;gap:.7rem;border-bottom:2px solid var(--orange);padding-bottom:.7rem;margin-bottom:.5rem}
+.navhead .navlogo{height:30px;display:block}
+.navhead .navwm{font-family:var(--font-disp);font-weight:600;letter-spacing:.22em;color:#f3efe2;font-size:.72rem;text-transform:uppercase;opacity:.92}
+.navhead .navclose{margin-left:auto;width:44px;height:44px;min-height:44px;display:flex;align-items:center;justify-content:center;
+  border:1px solid rgba(255,255,255,.4);background:rgba(0,0,0,.2);color:#fbf7ea;border-radius:10px;font-size:1.3rem;line-height:1;padding:0}
+.navhead .navclose:active{background:rgba(0,0,0,.4)}
+.navlist{display:flex;flex-direction:column;gap:.45rem;margin:.4rem 0 .2rem}
+.navlink{display:flex;align-items:center;gap:.8rem;width:100%;text-align:left;min-height:52px;
+  background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:.6rem .8rem;
+  color:#ece9dd;font-family:var(--font-disp);font-weight:600;letter-spacing:.04em;font-size:1rem;text-transform:uppercase}
+.navlink .nico{width:26px;height:26px;color:var(--orange);flex:none}
+.navlink .nico svg{width:26px;height:26px;display:block}
+.navlink:active{background:rgba(232,136,28,.18)}
+.navlink.on{border-color:var(--orange);background:rgba(232,136,28,.16);color:#fff}
+.navlink.on .nico{color:var(--orange)}
+.navsep{height:1px;background:rgba(255,255,255,.14);margin:.7rem 0 .55rem}
+.navacts{display:grid;grid-template-columns:1fr 1fr;gap:.45rem}
+.navact{display:flex;align-items:center;justify-content:center;gap:.5rem;min-height:48px;border-radius:11px;
+  background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);color:#ece9dd;
+  font-family:var(--font-disp);font-weight:600;letter-spacing:.04em;font-size:.82rem;text-transform:uppercase;padding:.5rem}
+.navact .nico{width:20px;height:20px;color:var(--orange);flex:none}
+.navact .nico svg{width:20px;height:20px;display:block}
+.navact:active{background:rgba(232,136,28,.18)}
+/* ===== Google Translate Element: suppress injected banner/offset/tooltip ===== */
+.goog-te-banner-frame,.skiptranslate{display:none!important}
+body{top:0!important}
+#goog-gt-tt,.goog-tooltip,.goog-te-balloon-frame{display:none!important}
+#gte{display:none}
+/* ===== FIX: small-screen layout — hamburger replaces bottom tab bar ===== */
+@media(max-width:700px){
+  .navham{display:flex}
+  #tabbar{display:none}
+  body{padding-bottom:calc(.4rem + var(--safe-b))}
+  footer.src{padding-bottom:calc(1.4rem + var(--safe-b))}
+}
+@media(min-width:701px){
+  .navham{display:none}
+  #navMenu{display:none!important}
+}
+/* ===== FIX: dynamic viewport height + overflow guards ===== */
+body{min-height:100vh;min-height:100dvh}
+.wrap{overflow-x:hidden}
+header.bar{flex-wrap:wrap}
+.barbtns{flex-wrap:wrap;row-gap:.35rem}
+@media(max-width:360px){.iconbtn{width:40px;height:40px;min-height:40px}.barbtns{gap:.3rem}}
+/* ===== FIX: launch splash logo never clips ===== */
+.launch .llogo{width:min(74%,360px);max-height:38vh;height:auto;object-fit:contain}
+
 </style>
 </head>
 <body>
@@ -527,6 +588,7 @@ footer.src{padding-bottom:calc(1.4rem + var(--tabbar-h) + var(--safe-b))}
   <header class="bar">
     <img class="logo loghome" id="barLogo" src="assets/logo_white.png" alt="MERCS — Home" role="button" tabindex="0" aria-label="Home">
     <span class="ttl">Companion</span>
+    <button class="navham" id="navHamBtn" aria-label="Menu" aria-expanded="false" title="Menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
     <div class="barbtns">
       <button class="iconbtn installbtn" id="installBtn" title="Install app" aria-label="Install app"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v11"/><path d="M8 11l4 4 4-4"/><path d="M4 19h16"/></svg></button>
       <button class="iconbtn" id="searchBtn" title="Search" aria-label="Search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg></button>
@@ -548,6 +610,21 @@ footer.src{padding-bottom:calc(1.4rem + var(--tabbar-h) + var(--safe-b))}
     <section class="panel" id="panel-keywords"></section>
   </main>
 </div>
+
+<!-- Mobile nav menu overlay (small screens) -->
+<div id="navMenu" role="dialog" aria-modal="true" aria-label="Navigation menu">
+  <div class="navhead">
+    <img class="navlogo" src="assets/logo_white.png" alt="MERCS">
+    <span class="navwm">Companion</span>
+    <button class="navclose" id="navCloseBtn" aria-label="Close menu">✕</button>
+  </div>
+  <div class="navlist" id="navList"></div>
+  <div class="navsep"></div>
+  <div class="navacts" id="navActs"></div>
+</div>
+
+<!-- Google Translate Element host (hidden) -->
+<div id="gte"></div>
 
 <nav id="tabbar"></nav>
 
