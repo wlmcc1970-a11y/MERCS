@@ -1,5 +1,5 @@
 /* MERCS Companion — service worker. DigiRune Studios. */
-const CACHE="mercs-v5";
+const CACHE="mercs-v6";
 const SHELL=[
   "./","index.html","data.js","app.js",
   "assets/logo_white.png","assets/logo_black.png","assets/cover.png","assets/opscover.png",
