@@ -1225,10 +1225,10 @@ function buildNavMenu(){
   if(acts){
     acts.innerHTML=`
       <button class="navact" data-act="search"><span class="nico">${ICO.search}</span><span>Search</span></button>
-      <button class="navact" data-act="tools"><span class="nico">${ICO.tools}</span><span>Tools</span></button>
       <button class="navact" data-act="translate"><span class="nico">${ICO.globe}</span><span>Translate</span></button>
+      <button class="navact" data-act="tools"><span class="nico">${ICO.tools}</span><span>Tools</span></button>
       <button class="navact" data-act="theme"><span class="nico">${ICO.book}</span><span>Low-light</span></button>
-      <button class="navact" data-act="account"><span class="nico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.5 4-6.5 8-6.5s8 2 8 6.5"/></svg></span><span>Sign In</span></button>`;
+      <button class="navact navact-wide" data-act="account"><span class="nico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.5 4-6.5 8-6.5s8 2 8 6.5"/></svg></span><span>Sign In</span></button>`;
     $$("#navActs .navact").forEach(b=>b.onclick=()=>{const a=b.dataset.act;closeNav();
       if(a==="search")openSearch();
       else if(a==="tools")openToolsMenu();
