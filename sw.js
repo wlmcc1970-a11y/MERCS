@@ -1,5 +1,5 @@
 /* MERCS Companion — service worker. DigiRune Studios. */
-const CACHE="mercs-v7";
+const CACHE="mercs-v8";
 const SHELL=[
   "./","index.html","data.js","app.js",
   "assets/logo_white.png","assets/logo_black.png","assets/cover.png","assets/opscover.png",
@@ -301,6 +301,7 @@ const IMG_ASSETS=[
 ];
 
 self.addEventListener("install",e=>{
+  self.skipWaiting();
   // Critical: app shell must cache. Do NOT block install on the 28 MB of card images.
   e.waitUntil(caches.open(CACHE).then(c=>Promise.allSettled(SHELL.map(u=>c.add(u)))));
 });
@@ -367,9 +368,12 @@ self.addEventListener("fetch",e=>{
     }));
     return;
   }
-  // app shell: cache-first with network fallback, then network-update
-  e.respondWith(caches.match(req).then(hit=>hit||fetch(req).then(res=>{
-    if(res&&res.status===200&&url.origin===location.origin){const cp=res.clone();caches.open(CACHE).then(c=>c.put(req,cp));}
-    return res;
-  }).catch(()=>caches.match("index.html"))));
+  // app shell: NETWORK-FIRST so online testers always get the latest deploy
+  // (cache only as offline fallback). no manual cache-clearing needed.
+  e.respondWith(
+    fetch(new Request(req,{cache:"no-cache"})).then(res=>{
+      if(res&&res.status===200&&url.origin===location.origin){const cp=res.clone();caches.open(CACHE).then(c=>c.put(req,cp));}
+      return res;
+    }).catch(()=>caches.match(req).then(hit=>hit||caches.match("index.html")))
+  );
 });

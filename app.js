@@ -136,11 +136,11 @@ let _manualCued=false;
 function manualCue(){ if(_manualCued)return ""; _manualCued=true; return "cue"; }
 /* ---------- per-tab Field Manual ---------- */
 const MANUAL={
- home:{steps:["This is your <b>operations dashboard</b>. Use the tabs along the bottom to move between sections.",
+ home:{steps:["This is your <b>operations dashboard</b>. Move between sections using the <b>tab bar</b> below (on tablet &amp; desktop) or the <b>menu button (&#9776;)</b> at the top-right (on phones).",
    "Tap a <b>quick-entry card</b> to jump straight into a section.",
-   "The <b>Tools</b> button (top right) opens six battlefield tools as overlays from any tab.",
-   "Use <b>Search</b> (top right) to find any unit, card, mission, rule, or keyword instantly."],
-   tip:"Sign in (optional, top right) to keep teams, trackers and favorites between sessions."},
+   "Open the six battlefield <b>Tools</b> from the Tools button &mdash; in the header on tablet &amp; desktop, or inside the <b>&#9776; menu</b> on phones &mdash; they overlay any section.",
+   "<b>Search</b> is always in the header (top-right) &mdash; find any unit, card, mission, rule, or keyword instantly."],
+   tip:"Sign in (optional) &mdash; in the header on tablet &amp; desktop, or inside the <b>&#9776; menu</b> on phones &mdash; to keep teams, trackers and favorites across sessions."},
  megacons:{steps:["Pick a <b>MegaCon</b> (faction) to see its roster in card order.",
    "Tap a unit to open its full Reference Card — the real card front and back, plus a structured breakdown.",
    "The eight <b>stats</b> are color-coded across the whole game; tap any tile for its meaning.",
@@ -1258,22 +1258,29 @@ window.closeNav=closeNav;
    SWIPE between tabs (55px X / 80px Y / 400ms; ignore in modals/inputs/scroll)
    ============================================================ */
 (function(){
-  let sx=0,sy=0,st=0,active=false;
-  const IGN=el=>{ if(!el)return false; return !!el.closest("input,textarea,select,.wtable,.dtable,table,.tblwrap,.cardimgs,.lb,.pop,.tools,.search,details"); };
+  let sx=0,sy=0,st=0,active=false,swiped=false;
+  const overlayOpen=()=>$("#tools").classList.contains("open")||$("#pop").classList.contains("open")||$("#search").classList.contains("open")||($("#navMenu")&&$("#navMenu").classList.contains("open"));
+  const IGN=el=>{ if(!el)return false; return !!el.closest("input,textarea,select,.wtable,.dtable,table,.tblwrap,.cardimgs,.lb,.pop,.tools,.search,#navMenu"); };
   document.addEventListener("touchstart",e=>{
-    if($("#tools").classList.contains("open")||$("#pop").classList.contains("open")||$("#search").classList.contains("open")){active=false;return;}
+    swiped=false;
+    if(overlayOpen()){active=false;return;}
     if(e.touches.length!==1||IGN(e.target)){active=false;return;}
     const t=e.touches[0];sx=t.clientX;sy=t.clientY;st=Date.now();active=true;
   },{passive:true});
   document.addEventListener("touchend",e=>{
     if(!active)return;active=false;const t=e.changedTouches[0];
     const dx=t.clientX-sx,dy=t.clientY-sy,dt=Date.now()-st;
-    if(dt>400)return;if(Math.abs(dx)<55||Math.abs(dy)>80)return;
+    // smooth + reliable: clearly-horizontal flick, generous time, modest distance
+    if(dt>700)return;
+    if(Math.abs(dx)<42)return;
+    if(Math.abs(dx)<Math.abs(dy)*1.4)return;   // must be dominantly horizontal (not a scroll/diagonal)
     const cur=TAB_IDS.indexOf(CURRENT_TAB);if(cur<0)return;
     let ni=cur+(dx<0?1:-1);
     if(ni<0||ni>=TAB_IDS.length)return;
-    navTo(TAB_IDS[ni]);
+    swiped=true; navTo(TAB_IDS[ni]);
   },{passive:true});
+  // a registered swipe must NOT also fire a tap on the newly-shown tab
+  document.addEventListener("click",e=>{ if(swiped){swiped=false;e.preventDefault();e.stopPropagation();} },true);
 })();
 
 /* ============================================================
