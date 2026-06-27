@@ -1,0 +1,17 @@
+{
+  "name": "MERCS Companion",
+  "short_name": "MERCS",
+  "description": "The official MERCS 2.5 field companion — units, contingency cards, corporate traits, operations, rules, modifiers, keywords and six battlefield tools.",
+  "id": "./",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "theme_color": "#5d5c27",
+  "background_color": "#5d5c27",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

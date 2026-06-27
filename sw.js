@@ -1,7 +1,7 @@
 /* MERCS Companion — service worker. DigiRune Studios. */
-const CACHE="mercs-v9";
+const CACHE="mercs-v10";
 const SHELL=[
-  "./","index.html","data.js","app.js",
+  "./","index.html","manifest.json","data.js","app.js",
   "assets/logo_white.png","assets/logo_black.png","assets/cover.png","assets/opscover.png",
   "icons/icon-192.png","icons/icon-512.png","icons/apple-touch-icon.png",
   "https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Days+One&family=Barlow:wght@400;500;600;700&display=swap"
