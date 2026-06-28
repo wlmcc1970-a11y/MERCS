@@ -400,8 +400,8 @@ function showUnit(i){const u=DATA.units[i];
       ${u.hasQuick?'<span class="chip q">Quick</span>':''}${u.deployable?'<span class="chip dep">Deployable</span>':''}
       <span class="grow"></span>${starBtn("units",u.id,cap(u.name))}</div>
     <div class="cardimgs">
-      <figure class="cardfig"><img loading="lazy" src="${esc(u.imgFront)}" alt="${esc(cap(u.name))} card front"><figcaption>Front</figcaption></figure>
-      <figure class="cardfig"><img loading="lazy" src="${esc(u.imgBack)}" alt="${esc(cap(u.name))} card back"><figcaption>Back</figcaption></figure>
+      <figure class="cardfig"><img loading="eager" src="${esc(u.imgFront)}" alt="${esc(cap(u.name))} card front"><figcaption>Front</figcaption></figure>
+      <figure class="cardfig"><img loading="eager" src="${esc(u.imgBack)}" alt="${esc(cap(u.name))} card back"><figcaption>Back</figcaption></figure>
     </div>
     <div class="stats">${stats}</div>
     ${u.deployable?'<div class="rule"><span>Deployable — stats shown as <b translate="no">X</b> are not used (it does not roll initiative or take normal damage).</span></div>':''}
@@ -410,7 +410,12 @@ function showUnit(i){const u=DATA.units[i];
   wireStars(d);
   $$(".cardfig img",d).forEach(img=>img.onclick=()=>lightbox(img.src,img.alt));
   var _ml=$("#megList"); if(_ml) _ml.style.display="none";
-  window.scrollTo(0,0);
+  // Land with the TOP of the card just under the sticky header — not the page heading, not mid-card.
+  const landTop=()=>{const hdr=document.querySelector("header.bar");const off=hdr?hdr.offsetHeight:0;
+    const y=d.getBoundingClientRect().top+window.pageYOffset-off-4;window.scrollTo(0,Math.max(0,y));};
+  landTop();requestAnimationFrame(landTop);
+  // Re-assert once each card image has loaded so async image growth cannot shift the view mid-card.
+  $$(".cardimgs img",d).forEach(img=>{if(!img.complete)img.addEventListener("load",landTop,{once:true});});
 }
 window.showUnit=showUnit;
 function megBack(){const d=$("#megDetail");if(d)d.innerHTML="";const ml=$("#megList");if(ml)ml.style.display="";window.scrollTo(0,0);}
