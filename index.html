@@ -234,10 +234,14 @@ select{min-width:140px}
 /* popover + toast */
 .pop{position:fixed;inset:0;background:rgba(28,29,22,.5);display:none;align-items:flex-end;justify-content:center;z-index:50}
 .pop.open{display:flex}
-.popcard{background:var(--surface);border:1px solid var(--line2);border-top:4px solid var(--olive);border-radius:16px 16px 0 0;width:100%;max-width:780px;
+.popcard{position:relative;background:var(--surface);border:1px solid var(--line2);border-top:4px solid var(--olive);border-radius:16px 16px 0 0;width:100%;max-width:780px;
   padding:1rem 1.1rem calc(1.2rem + var(--safe-b));box-shadow:var(--shadow);animation:up .2s ease}
 @keyframes up{from{transform:translateY(20px);opacity:.6}to{transform:none;opacity:1}}
 .popcard h4{margin:.1rem 0 .2rem;font-size:1.15rem;color:var(--ink);text-transform:uppercase}
+.popx{position:absolute;top:.6rem;right:.7rem;z-index:2;width:34px;height:34px;min-height:34px;display:flex;align-items:center;justify-content:center;border:1px solid var(--line2);background:var(--surface2);color:var(--muted);border-radius:9px;font-size:1rem;line-height:1;cursor:pointer}
+.popx:hover{border-color:var(--orange);color:var(--orange-d)}
+.popcard>h4:first-of-type{padding-right:2.4rem}
+
 .popcard .bw{display:inline-block;margin-top:.5rem;font-size:.78rem;padding:.2rem .55rem;border-radius:6px;font-weight:700;font-family:var(--font-disp);
   background:#eaf3ea;color:var(--good);border:1px solid var(--good)}
 /* ---- translate language picker ---- */
@@ -293,6 +297,8 @@ table.cmp tbody th{background:var(--surface2);text-align:left;font-family:var(--
 .empty{color:var(--faint);text-align:center;padding:1.4rem;border:1px dashed var(--line2);border-radius:11px;margin-top:.7rem;font-size:.88rem}
 footer.src{color:var(--faint);font-size:.7rem;text-align:center;padding:1rem 1.1rem calc(1.4rem + var(--safe-b));line-height:1.5}
 footer.src b{color:var(--olive-d)}
+.dr-link{color:inherit;text-decoration:underline;text-underline-offset:2px;text-decoration-thickness:1px}
+.dr-link:hover{text-decoration-color:var(--olive-d)}
 
 /* ===== MERCS Companion — component additions (same token system) ===== */
 :root{--tabbar-h:60px;}

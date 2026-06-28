@@ -115,20 +115,18 @@ function heatColor(g){if(g==null)return "var(--muted)";
   return `rgb(${c[0]},${c[1]},${c[2]})`;}
 
 /* ---------- popover (.pop/.popcard) ---------- */
-function popOpen(html){$("#popcard").innerHTML=html;$("#pop").classList.add("open");}
+function popOpen(html){$("#popcard").innerHTML='<button class="popx" aria-label="Close" onclick="popClose()">&#10005;</button>'+html;$("#pop").classList.add("open");}
 function popClose(){$("#pop").classList.remove("open");}
 function statPop(k){const t=TERM[k];
   popOpen(`<h4>${tn(t.term)} <span class="muted small" translate="no">(${k})</span></h4><div>${esc(t.def)}</div>
     <span class="bw">${t.betterWhen==="lower"?"&#9660; Lower is better":"&#9650; Higher is better"}</span>
-    <p class="small muted" style="margin-top:.7rem">${esc(DATA.successRule)}</p>
-    <div style="margin-top:.7rem"><button class="btn ghost sm" onclick="popClose()">Close</button></div>`);}
+    <p class="small muted" style="margin-top:.7rem">${esc(DATA.successRule)}</p>`);}
 window.statPop=statPop; window.popClose=popClose;
 /* keyword / personal-ability popover (used inline) */
 function termPop(name){
   const kw=DATA.keywords[name]||DATA.personalAbilities[name];
   if(!kw){return;}
-  popOpen(`<h4>${tn(kw.name)}</h4><div>${escText(kw.text)}</div>
-    <div style="margin-top:.8rem"><button class="btn ghost sm" onclick="popClose()">Close</button></div>`);}
+  popOpen(`<h4>${tn(kw.name)}</h4><div>${escText(kw.text)}</div>`);}
 window.termPop=termPop;
 
 /* ---------- one-time attention cue: only the FIRST manual rendered per session gets a gentle pulse ---------- */
@@ -240,7 +238,7 @@ function toolManual(id){const m=TOOL_MANUAL[id];if(!m)return "";
     <div class="mbody"><ol>${m.steps.map(s=>`<li>${s}</li>`).join("")}</ol>${m.tip?`<div class="tip">&#9733; ${m.tip}</div>`:""}</div></details>`;}
 
 /* ---------- license footer (reused on every panel) ---------- */
-const LICENSE=`<footer class="src">MERCS&trade; &copy; Fifth Angel Studios — used under license. App by <b>DigiRune Studios</b>.<br>All stats, cards &amp; rules transcribed verbatim from the MERCS 2.5 source.</footer>`;
+const LICENSE=`<footer class="src">MERCS&trade; &copy; Fifth Angel Studios — used under license. App by <a href="https://digirunestudios.com" target="_blank" rel="noopener" class="dr-link"><b>DigiRune Studios</b></a>.<br>All stats, cards &amp; rules transcribed verbatim from the MERCS 2.5 source.</footer>`;
 
 /* ---------- inline SVG icons (hand-authored) ---------- */
 const ICO={
@@ -397,10 +395,10 @@ function showUnit(i){const u=DATA.units[i];
   const abil=u.abilities.length?`<h4 class="usec">Personal Abilities</h4><ul class="ablist">${u.abilities.map(a=>{const m=a.match(/^(.+?):\s*([\s\S]*)$/);return m?`<li><b translate="no">${esc(m[1])}</b>: ${esc(m[2])}</li>`:`<li>${esc(a)}</li>`;}).join("")}</ul>`:"";
   const kit=(u.kit&&u.kit.length)?`<h4 class="usec">Kit &amp; Keywords</h4><ul class="ablist">${u.kit.map(k=>`<li><b translate="no">${esc(k.name)}</b>: ${esc(k.text)}</li>`).join("")}</ul>`:"";
   const d=$("#megDetail");
-  d.innerHTML=`<button class="btn ghost sm" onclick="megBack()" style="margin:.1rem 0 .7rem">‹ Roster</button><div class="unitcard" id="rec-unit-${esc(u.id)}"><div class="uhead" onclick="megHeadClose(event)" style="cursor:pointer" title="Tap to close"><span class="fac" translate="no">${esc(u.faction)}</span>
+  d.innerHTML=`<button class="rback" onclick="megBack()" style="margin:.1rem 0 .7rem">&#8249; Back</button><div class="unitcard" id="rec-unit-${esc(u.id)}"><div class="uhead"><span class="fac" translate="no">${esc(u.faction)}</span>
       <span class="chip" translate="no">${esc(u.archetype)}</span>
       ${u.hasQuick?'<span class="chip q">Quick</span>':''}${u.deployable?'<span class="chip dep">Deployable</span>':''}
-      <span class="grow"></span>${starBtn("units",u.id,cap(u.name))}<button class="ucls" aria-label="Close card" title="Close" onclick="event.stopPropagation();megBack()">&#10005;</button></div>
+      <span class="grow"></span>${starBtn("units",u.id,cap(u.name))}</div>
     <div class="cardimgs">
       <figure class="cardfig"><img loading="lazy" src="${esc(u.imgFront)}" alt="${esc(cap(u.name))} card front"><figcaption>Front</figcaption></figure>
       <figure class="cardfig"><img loading="lazy" src="${esc(u.imgBack)}" alt="${esc(cap(u.name))} card back"><figcaption>Back</figcaption></figure>
@@ -443,13 +441,14 @@ builders.contingency=function(p){
     row.classList.add("open");
     const uflag=!c.n;
     const rv=el("div","contreveal");
-    rv.innerHTML=`<div class="ccard reveal">
+    rv.innerHTML=`<button class="rback" data-revback style="margin-bottom:.55rem">&#8249; Back</button><div class="ccard reveal">
         <img class="cimg" loading="lazy" src="${esc(c.img)}" alt="${esc(c.title)}" onclick="lightbox('${esc(c.img).replace(/'/g,"\\'")}','${esc(c.title).replace(/'/g,"\\'")}')">
         <div class="cbody"><div class="row" style="justify-content:space-between;align-items:flex-start;gap:.4rem">
             <span class="ct" translate="no">${esc(c.title)}</span><span class="cop">${esc(c.op)}</span></div>
           ${uflag?'<span class="chip dep" style="margin:.2rem 0">Faction-Unique</span>':''}
           <div class="cx">${esc(c.text)}</div></div></div>`;
     row.after(rv);
+    const _rb=rv.querySelector("[data-revback]");if(_rb)_rb.onclick=()=>{rv.remove();row.classList.remove("open");row.scrollIntoView({behavior:"smooth",block:"nearest"});};
     rv.querySelector(".ccard").scrollIntoView({behavior:"smooth",block:"nearest"});};
   const draw=()=>{const f=$("#contFac",p).value;Store.set("contBrowseFac",f);const q=$("#contSearch",p).value.trim().toLowerCase();
     const cards=contCardsFor(f).filter(c=>!q||c.title.toLowerCase().includes(q)||c.text.toLowerCase().includes(q));
@@ -597,11 +596,11 @@ function coreRuleEntries(){
 function reconRuleEntries(){
   const r=DATA.rules.recon,out=[];
   out.push({slug:"recon-faq",title:"Frequently Asked Questions",
-    html:`<div class="rulesec">${r.faq.map(x=>`<div class="faq"><div class="q">${esc(cleanRuleText(x.q))}</div><div class="a">${escText(cleanRuleText(x.a))}</div></div>`).join("")}</div>`});
+    html:`<div class="rulesec" id="rec-rule-recon-faq">${r.faq.map(x=>`<div class="faq"><div class="q">${esc(cleanRuleText(x.q))}</div><div class="a">${escText(cleanRuleText(x.a))}</div></div>`).join("")}</div>`});
   r.addOns.forEach(x=>out.push({slug:"recon-add-"+SLUG(x.title),title:x.title,
-    html:`<article class="rulesec">${renderRuleBody(x.body)}</article>`}));
+    html:`<article class="rulesec" id="rec-rule-recon-add-${SLUG(x.title)}">${renderRuleBody(x.body)}</article>`}));
   r.rulesRevised.forEach(x=>out.push({slug:"recon-rev-"+SLUG(x.title),title:x.title,
-    html:`<article class="rulesec">${renderRuleBody(x.body)}</article>`}));
+    html:`<article class="rulesec" id="rec-rule-recon-rev-${SLUG(x.title)}">${renderRuleBody(x.body)}</article>`}));
   return out;
 }
 builders.rules=function(p){
@@ -631,7 +630,7 @@ builders.rules=function(p){
     if(i<0||i>=ents.length)return;
     const e=ents[i],prev=ents[i-1],next=ents[i+1];
     $("#rulesBody",p).innerHTML=`<div class="ruleflow rulebook">
-      <button class="rback" id="rBack">&#8249; Contents</button>
+      <button class="rback" id="rBack">&#8249; Back</button>
       <div class="rsec-meta">Section ${i+1} of ${ents.length}</div>
       <h3 class="rsh rsh-big" translate="no">${esc(e.title)}</h3>
       ${e.html}
@@ -661,7 +660,7 @@ builders.rules=function(p){
 builders.modifiers=function(p){
   p.innerHTML=`<h2 class="vh">Modifiers</h2><p class="vsub">The three combat modifier tables from the rulebook.</p>
    ${manual("modifiers")}
-   ${DATA.modifiers.map(m=>`<div class="modcard"><h3 class="rsh" translate="no">${esc(m.title)}</h3>${tableHTML(m)}${m.notes?`<div class="modnotes">${escText(m.notes)}</div>`:""}</div>`).join("")}
+   ${DATA.modifiers.map(m=>`<div class="modcard" id="rec-mod-${SLUG(m.title)}"><h3 class="rsh" translate="no">${esc(m.title)}</h3>${tableHTML(m)}${m.notes?`<div class="modnotes">${escText(m.notes)}</div>`:""}</div>`).join("")}
    ${LICENSE}`;
 };
 
@@ -743,7 +742,9 @@ function codexDetail(v,i){const u=DATA.units[i];
     return `<button class="stat" onclick="statPop('${k}')"><div class="k" translate="no">${k}</div><div class="v" translate="no" style="color:${col}">${esc(val)}</div>
       <div class="bar"><i style="width:${w}%;background:${col}"></i></div></button>`;}).join("");
   $("#cxDetail",v).innerHTML=`<div class="unitcard"><div class="uhead"><h3 translate="no">${esc(cap(u.name))}</h3><span class="fac" translate="no">${esc(u.faction)}</span></div>
-    <div class="stats">${stats}</div><div class="small muted">Tap a stat for its meaning. Open <b>MegaCons</b> for the full card.</div></div>`;
+    <div class="stats">${stats}</div><div class="small muted">Tap a stat for its meaning.</div>
+    <button class="btn sm" id="cxOpen" style="margin-top:.7rem">View full MegaCon card &#8250;</button></div>`;
+  const ob=$("#cxOpen",v);if(ob)ob.onclick=()=>{closeTools();Store.set("megFac",u.faction);navTo("megacons");setTimeout(()=>showUnit(i),60);};
   $("#cxDetail",v).scrollIntoView({behavior:"smooth",block:"start"});
 }
 
@@ -1056,15 +1057,22 @@ function deepGoOp(i){
   navTo("operations");
   requestAnimationFrame(()=>scrollToRecord("rec-op-"+DATA.operations[i].id));
 }
-function deepGoRule(slug){
-  Store.set("rulesMode","core");
+function deepGoRule(slug,mode){
+  mode=mode||"core";
+  Store.set("rulesMode",mode);
   navTo("rules");
   requestAnimationFrame(()=>{
     const panel=$("#panel-rules");
-    if(panel&&panel._ruleOpen)panel._ruleOpen("core",slug);
+    if(panel&&panel._ruleOpen)panel._ruleOpen(mode,slug);
     scrollToRecord("rec-rule-"+slug);
   });
 }
+/* deep-link → a Modifier table */
+function deepGoModifier(slug){navTo("modifiers");requestAnimationFrame(()=>scrollToRecord("rec-mod-"+slug));}
+/* popover for a glossary/status term that has no dedicated panel of its own */
+function defPop(k){const t=DATA.termDefs&&DATA.termDefs[k];if(!t)return;
+  popOpen(`<h4>${tn(t.term||k)}</h4><div>${escText(t.def||"")}</div>`);}
+window.defPop=defPop;
 function deepGoTerm(mode,name){
   Store.set("kwMode",mode);
   navTo("keywords");
@@ -1076,19 +1084,52 @@ function deepGoTerm(mode,name){
   });
 }
 
+/* word-boundary "contains": true if needle starts at a word boundary inside hay */
+function _wb(hay,needle){let i=hay.indexOf(needle);while(i>=0){if(i===0||!/[a-z0-9]/.test(hay[i-1]))return true;i=hay.indexOf(needle,i+1);}return false;}
+/* relevance score: exact name > name-prefix > name word-start > name-substring > body word-start > body-substring */
+function scoreHit(r,lc){const L=r.labelLc;
+  if(r.abbr&&r.abbr.toLowerCase()===lc)return 1000;
+  if(L===lc)return 1000;
+  if(L.startsWith(lc))return 850;
+  if(_wb(L,lc))return 700;
+  if(L.includes(lc))return 560;
+  if(_wb(r.lc,lc))return 320;
+  return 140;}
+/* COMPREHENSIVE search index — EVERY record type in the app is indexed here so
+   nothing is unreachable from search: units, contingency (core+unique), corporate
+   traits, operations, ALL rules (core + Recon FAQ/Add-Ons/Rules-Revised), modifier
+   tables, keywords, personal abilities, stat definitions and glossary terms. */
 function buildSearchIndex(){
   const idx=[];
-  DATA.units.forEach((u,i)=>idx.push({type:"Unit",key:"rec-unit-"+u.id,fac:u.faction,uidx:i,label:cap(u.name),sub:u.faction+" · "+u.archetype,text:(u.name+" "+u.archetype+" "+u.weapons.map(w=>w.name).join(" ")),go:()=>deepGoUnit(u.faction,i,u.id)}));
-  // Core cards (19) are identical across all 12 decks — index ONCE, not per-faction.
+  DATA.units.forEach((u,i)=>idx.push({type:"Unit",key:"rec-unit-"+u.id,fac:u.faction,uidx:i,label:cap(u.name),sub:u.faction+" · "+u.archetype,text:(u.name+" "+u.archetype+" "+u.weapons.map(w=>w.name).join(" ")+" "+(u.kit||"")),go:()=>deepGoUnit(u.faction,i,u.id)}));
+  // Contingency: core cards (19, identical across all 12 decks) indexed ONCE; faction-unique (1/deck) once each.
   DATA.contingency.core.forEach(c=>idx.push({type:"Contingency",key:"rec-cont-"+SLUG(c.title),fac:DATA.factions[0],label:c.title,sub:"All decks · "+c.op,text:c.title+" "+c.text,go:()=>deepGoCont(DATA.factions[0],c.title)}));
-  // Faction-unique cards (1 per deck) — index once each, labeled by faction.
   DATA.factions.forEach(f=>{const u=uniqueFor(f);if(u)idx.push({type:"Contingency",key:"rec-cont-"+SLUG(u.title),fac:f,label:u.title,sub:f+" · "+u.op,text:u.title+" "+u.text,go:()=>deepGoCont(f,u.title)});});
-  DATA.factions.forEach(f=>{const cc=DATA.corporateTraits[SLUG(f)];if(cc)cc.traits.forEach(t=>idx.push({type:"Corporate",key:"rec-corp-"+SLUG(f),fac:f,label:t.name,sub:f,text:t.name+" "+t.text,go:()=>deepGoCorp(f)}));});
-  DATA.operations.forEach((o,i)=>idx.push({type:"Operation",key:"rec-op-"+o.id,oidx:i,label:o.title,sub:"Mission",text:o.title+" "+o.briefing,go:()=>deepGoOp(i)}));
-  DATA.rules.core.sections.forEach((s,si)=>{if(s.title&&!/^Cover$/i.test(s.title)&&!/^Table of Contents$/i.test(s.title))idx.push({type:"Rule",key:"rec-rule-"+SLUG(s.title),label:s.title,sub:"Core 2.5",text:s.title+" "+cleanRuleText(s.body),go:()=>deepGoRule(SLUG(s.title))});});
+  DATA.factions.forEach(f=>{const cc=DATA.corporateTraits[SLUG(f)];if(cc)cc.traits.forEach(t=>idx.push({type:"Corporate",key:"rec-corp-"+SLUG(f),fac:f,label:t.name,sub:f+" · Corporate Trait",text:t.name+" "+t.text,go:()=>deepGoCorp(f)}));});
+  DATA.operations.forEach((o,i)=>idx.push({type:"Operation",key:"rec-op-"+o.id,oidx:i,label:o.title,sub:"Operation",text:o.title+" "+o.briefing,go:()=>deepGoOp(i)}));
+  // Core rules
+  DATA.rules.core.sections.forEach((s,si)=>{if(s.title&&!/^Cover$/i.test(s.title)&&!/^Table of Contents$/i.test(s.title))idx.push({type:"Rule",key:"rec-rule-"+SLUG(s.title),label:s.title,sub:"Core 2.5",text:s.title+" "+cleanRuleText(s.body),go:()=>deepGoRule(SLUG(s.title),"core")});});
+  // Recon add-on rules — FAQ (grouped + each question), Add-Ons, Rules-Revised  (previously NOT searchable)
+  if(DATA.rules.recon){const r=DATA.rules.recon;
+    if(r.faq&&r.faq.length){
+      idx.push({type:"Rule",key:"rec-rule-recon-faq",label:"Recon — Frequently Asked Questions",sub:"Recon Add-On",text:"Recon FAQ "+r.faq.map(x=>x.q+" "+x.a).join(" "),go:()=>deepGoRule("recon-faq","recon")});
+      r.faq.forEach(x=>idx.push({type:"Rule",key:"rec-rule-recon-faq",label:cleanRuleText(x.q),sub:"Recon FAQ",text:cleanRuleText(x.q)+" "+cleanRuleText(x.a),go:()=>deepGoRule("recon-faq","recon")}));
+    }
+    (r.addOns||[]).forEach(x=>idx.push({type:"Rule",key:"rec-rule-recon-add-"+SLUG(x.title),label:"Recon — "+x.title,sub:"Recon Add-On",text:"Recon "+x.title+" "+cleanRuleText(x.body),go:()=>deepGoRule("recon-add-"+SLUG(x.title),"recon")}));
+    (r.rulesRevised||[]).forEach(x=>idx.push({type:"Rule",key:"rec-rule-recon-rev-"+SLUG(x.title),label:"Recon — "+x.title,sub:"Recon Rules Revised",text:"Recon "+x.title+" "+cleanRuleText(x.body),go:()=>deepGoRule("recon-rev-"+SLUG(x.title),"recon")}));
+  }
+  // Modifier tables  (previously NOT searchable)
+  DATA.modifiers.forEach(m=>idx.push({type:"Modifier",key:"rec-mod-"+SLUG(m.title),label:m.title,sub:"Modifier Table",text:m.title+" "+(m.columns||[]).join(" ")+" "+(m.rows||[]).map(rw=>rw.join(" ")).join(" ")+" "+(m.notes||""),go:()=>deepGoModifier(SLUG(m.title))}));
+  // Keywords + Personal Abilities
   Object.values(DATA.keywords).forEach(k=>idx.push({type:"Keyword",key:"rec-kw-"+SLUG(k.name),kwName:k.name,label:k.name,sub:"Keyword",text:k.name+" "+k.text,go:()=>deepGoTerm("keywords",k.name)}));
   Object.values(DATA.personalAbilities).forEach(k=>idx.push({type:"Ability",key:"rec-pa-"+SLUG(k.name),kwName:k.name,label:k.name,sub:"Personal Ability",text:k.name+" "+k.text,go:()=>deepGoTerm("pa",k.name)}));
-  idx.forEach(r=>r.lc=(r.label+" "+r.text).toLowerCase());
+  // Stat definitions (IM, RE, CR…) → stat popover  (previously NOT searchable)
+  if(DATA.terms)Object.keys(DATA.terms).forEach(k=>{const t=DATA.terms[k];idx.push({type:"Term",key:"stat-"+k,abbr:k,label:(t.term||k)+" ("+k+")",sub:"Stat",text:k+" "+(t.term||"")+" "+(t.def||""),go:()=>statPop(k)});});
+  // Glossary / status terms not already covered above → term popover  (previously NOT searchable)
+  if(DATA.termDefs){const have=new Set([].concat(Object.keys(DATA.keywords),Object.keys(DATA.personalAbilities),Object.keys(DATA.terms||{}),Object.values(DATA.terms||{}).map(t=>t.term||"")).map(x=>x.toUpperCase()));
+    Object.keys(DATA.termDefs).forEach(k=>{if(have.has(k.toUpperCase()))return;const t=DATA.termDefs[k];idx.push({type:"Term",key:"term-"+SLUG(k),label:t.term||k,sub:"Game Term",text:(t.term||k)+" "+(t.def||""),go:()=>defPop(k)});});
+  }
+  idx.forEach(r=>{r.labelLc=r.label.toLowerCase();r.lc=(r.label+" "+r.text).toLowerCase();});
   SEARCH_INDEX=idx;
 }
 function hl(text,q){if(!q)return esc(text);const i=text.toLowerCase().indexOf(q.toLowerCase());if(i<0)return esc(text);
@@ -1105,14 +1146,19 @@ let _searchT=null;
 function runSearch(q){q=q.trim();const out=$("#searchResults");
   if(q.length<2){out.innerHTML=`<div class="empty">Type at least two characters.</div>`;return;}
   const lc=q.toLowerCase();
-  const hits=SEARCH_INDEX.filter(r=>r.lc.includes(lc)).slice(0,120);
+  let hits=SEARCH_INDEX.filter(r=>r.lc.includes(lc));
   if(!hits.length){out.innerHTML=`<div class="empty">No results for “${esc(q)}”.</div>`;return;}
-  // group by type
-  const order=["Unit","Contingency","Corporate","Operation","Rule","Keyword","Ability"];
-  const PLURAL={Unit:"Units",Contingency:"Contingency Cards",Corporate:"Corporate Traits",Operation:"Operations",Rule:"Rules",Keyword:"Keywords",Ability:"Personal Abilities"};
+  // rank every hit by relevance so the most obvious match is always first
+  hits.forEach(h=>h._sc=scoreHit(h,lc));
+  hits.sort((a,b)=>b._sc-a._sc||a.labelLc.localeCompare(b.labelLc));
+  hits=hits.slice(0,200);
+  const order=["Unit","Contingency","Corporate","Operation","Rule","Modifier","Keyword","Ability","Term"];
+  const PLURAL={Unit:"Units",Contingency:"Contingency Cards",Corporate:"Corporate Traits",Operation:"Operations",Rule:"Rules",Modifier:"Modifiers",Keyword:"Keywords",Ability:"Personal Abilities",Term:"Game Terms"};
   const groups={};hits.forEach(h=>{(groups[h.type]=groups[h.type]||[]).push(h);});
-  out.innerHTML=order.filter(t=>groups[t]).map(t=>`<div class="sgrp"><div class="sgh">${esc(PLURAL[t]||t)} <span>${groups[t].length}</span></div>
-    ${groups[t].map((h,gi)=>`<button class="sres" data-t="${esc(t)}" data-i="${SEARCH_INDEX.indexOf(h)}">
+  // float the group holding the strongest match to the top; canonical order breaks ties
+  const present=Object.keys(groups).sort((a,b)=>(groups[b][0]._sc-groups[a][0]._sc)||(order.indexOf(a)-order.indexOf(b)));
+  out.innerHTML=present.map(t=>`<div class="sgrp"><div class="sgh">${esc(PLURAL[t]||t)} <span>${groups[t].length}</span></div>
+    ${groups[t].map(h=>`<button class="sres" data-i="${SEARCH_INDEX.indexOf(h)}">
       <span class="sl" translate="no">${hl(h.label,q)}</span><span class="ss" translate="no">${esc(h.sub)}</span></button>`).join("")}</div>`).join("");
   $$("#searchResults .sres",out).forEach(b=>b.onclick=()=>{const r=SEARCH_INDEX[+b.dataset.i];closeSearch();r.go();});
 }
@@ -1188,8 +1234,7 @@ function translatePicker(){
     +LANGS.map(([code,name])=>`<button class="langopt" data-lang="${esc(code)}" translate="no">${esc(name)}</button>`).join("");
   popOpen(`<div translate="no"><h4>Translate</h4>
     <p class="small muted" style="margin:.1rem 0 .6rem">Translates this page in place. Core game terms stay in English. Needs an internet connection.</p>
-    <div class="langlist" id="langList">${opts}</div>
-    <div class="row" style="margin-top:.8rem"><button class="btn ghost sm" onclick="popClose()">Close</button></div></div>`);
+    <div class="langlist" id="langList">${opts}</div></div>`);
   $$("#langList .langopt").forEach(b=>b.onclick=()=>setTranslate(b.dataset.lang));
 }
 window.translatePicker=translatePicker;
@@ -1201,12 +1246,12 @@ function shopMercs(){window.open("https://www.mercsminiatures.com/store","_blank
 window.shopMercs=shopMercs;
 function openAbout(){
   popOpen(`<h4>About &amp; Privacy</h4>
-    <p class="small" style="color:var(--ink2)">The official MERCS Companion by <b>DigiRune Studios</b>. A complete field reference for the MERCS 2.5 tabletop game — every unit, contingency card, corporate trait, operation, rule, modifier and keyword, plus six battlefield tools.</p>
+    <p class="small" style="color:var(--ink2)">The official MERCS Companion by <a href="https://digirunestudios.com" target="_blank" rel="noopener" class="dr-link"><b>DigiRune Studios</b></a>. A complete field reference for the MERCS 2.5 tabletop game — every unit, contingency card, corporate trait, operation, rule, modifier and keyword, plus six battlefield tools.</p>
     <h4 style="font-size:1rem;margin-top:.8rem">Privacy</h4>
     <p class="small" style="color:var(--ink2)">This app collects <b>no personal data</b>. It works fully offline. The optional local account (Sign In) saves your teams, trackers and favorites only on this device — nothing is sent anywhere and there is no password or server.</p>
     <h4 style="font-size:1rem;margin-top:.8rem">Credits &amp; License</h4>
     <p class="small" style="color:var(--ink2)">MERCS&trade; &copy; Fifth Angel Studios — used under license. All stats, cards and rules are transcribed verbatim from the MERCS 2.5 source. Interface icons are hand-authored by DigiRune Studios; fonts (Oswald, Days One, Barlow) are served from Google Fonts under the SIL Open Font License.</p>
-    <div class="row" style="margin-top:.9rem"><button class="btn" id="abShop"><span class="ico" style="width:18px;height:18px;display:inline-block;vertical-align:-3px">${ICO.cart}</span> Shop MERCS</button><button class="btn ghost" onclick="popClose()">Close</button></div>`);
+    <div class="row" style="margin-top:.9rem"><button class="btn" id="abShop"><span class="ico" style="width:18px;height:18px;display:inline-block;vertical-align:-3px">${ICO.cart}</span> Shop MERCS</button></div>`);
   $("#abShop").onclick=shopMercs;
 }
 window.openAbout=openAbout;
@@ -1369,14 +1414,14 @@ function showUpdateToast(){
    ============================================================ */
 function openAccount(){
   if(ACCOUNT){popOpen(`<h4>Account</h4><p class="small">Signed in as <b translate="no">${esc(ACCOUNT)}</b>. Your teams, trackers and favorites save automatically on this device.</p>
-    <div class="row" style="margin-top:.7rem"><button class="btn" id="acOut">Sign out</button><button class="btn ghost" onclick="popClose()">Close</button></div>`);
+    <div class="row" style="margin-top:.7rem"><button class="btn" id="acOut">Sign out</button></div>`);
     $("#acOut").onclick=()=>{signOut();popClose();};
   }else{const saves=listSaves();
     popOpen(`<h4>Sign in to save</h4>
       <p class="small muted">Optional. Your favorites, strike teams and tracker state are saved on <b>this device</b> (no password needed) so your progress carries between sessions. Cross-device sync with Google or Apple sign-in is coming soon.</p>
       <div class="row" style="margin-top:.6rem"><input id="acName" type="text" placeholder="Profile name" style="flex:1" autocomplete="off"></div>
       ${saves.length?`<div class="tagline" style="margin-top:.55rem">Saved here: ${saves.map(x=>`<button class="chip" data-load="${esc(x)}">${esc(x)}</button>`).join("")}</div>`:""}
-      <div class="row" style="margin-top:.6rem"><button class="btn" id="acGo">Sign in</button><button class="btn ghost" onclick="popClose()">Close</button></div>`);
+      <div class="row" style="margin-top:.6rem"><button class="btn" id="acGo">Sign in</button></div>`);
     $("#acGo").onclick=()=>{signIn($("#acName").value);popClose();};
     $$("#popcard [data-load]").forEach(b=>b.onclick=()=>{signIn(b.dataset.load);popClose();});}
 }
