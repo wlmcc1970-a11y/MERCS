@@ -33,7 +33,7 @@
 :root{
   --bg:#e9e5db; --surface:#ffffff; --surface2:#f6f3ea; --surface3:#efe9dc;
   --line:#d8d0bf; --line2:#c7bda6;
-  --ink:#1c1d1a; --ink2:#3c3d36; --muted:#6c6d62; --faint:#9a9b8e;
+  --ink:#1c1d1a; --ink2:#3c3d36; --muted:#66675d; --faint:#9a9b8e;
   --olive:#8a8a3c; --olive-d:#5d5c27; --olive-l:#b6b46a; --olive-bg:#7c7b33;
   --orange:#e8881c; --orange-d:#bd6a0c;
   --brass:#b07f34; --slate:#5d6b64;
@@ -66,6 +66,9 @@ html[data-theme="dark"] .tally{background:linear-gradient(0deg,var(--bg),rgba(21
 html[data-theme="dark"] .manual[open]>summary{background:linear-gradient(180deg,#2b2d22,#23261d)}
 /* rule callout text was a hard olive — use token on dark */
 html[data-theme="dark"] .rule{color:var(--ink2)}
+/* dark header: olive-d is a light text tone on dark, so the token gradient went PALER than light mode;
+   use a true dark-olive gradient so the white logo/wordmark stays ≥3:1 */
+html[data-theme="dark"] header.bar{background:linear-gradient(180deg,#6b6a2e,#4f4e21)}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;height:100%}
 html{overflow-anchor:none}
@@ -178,7 +181,7 @@ select{min-width:140px}
 .item .grow{flex:1}
 .item .ar{color:var(--orange-d);font-weight:700}
 .unitcard{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:1rem;box-shadow:var(--shadow);margin-top:.6rem}
-.unitcard .uhead{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;border-bottom:2px solid var(--olive);padding-bottom:.4rem}
+.unitcard .uhead{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;border-bottom:2px solid var(--olive);padding-bottom:.4rem;cursor:pointer}
 .unitcard h3{margin:0;font-size:1.35rem;color:var(--ink);text-transform:uppercase;font-weight:700}
 .unitcard .fac{color:#fff;background:var(--olive-d);font-weight:700;letter-spacing:.1em;font-size:.66rem;
   text-transform:uppercase;padding:.12rem .45rem;border-radius:5px;font-family:var(--font-disp)}
@@ -242,6 +245,7 @@ select{min-width:140px}
 .popcard h4{margin:.1rem 0 .2rem;font-size:1.15rem;color:var(--ink);text-transform:uppercase}
 .popx{position:absolute;top:.6rem;right:.7rem;z-index:2;width:34px;height:34px;min-height:34px;display:flex;align-items:center;justify-content:center;border:1px solid var(--line2);background:var(--surface2);color:var(--muted);border-radius:9px;font-size:1rem;line-height:1;cursor:pointer}
 .popx:hover{border-color:var(--orange);color:var(--orange-d)}
+.popx::after{content:"";position:absolute;inset:-6px}
 .popcard>h4:first-of-type{padding-right:2.4rem}
 
 .popcard .bw{display:inline-block;margin-top:.5rem;font-size:.78rem;padding:.2rem .55rem;border-radius:6px;font-weight:700;font-family:var(--font-disp);
@@ -356,13 +360,14 @@ body{padding-bottom:calc(var(--tabbar-h) + var(--safe-b));}
   color:#cfcdae;padding:.45rem .1rem;min-height:var(--tabbar-h);font-family:var(--font-disp);font-weight:600;letter-spacing:.02em;font-size:.58rem;text-transform:uppercase}
 .tab .tico{width:22px;height:22px;opacity:.85}
 .tab .tlbl{line-height:1}
-.tab.on{color:var(--orange)}
+.tab.on{color:#f29a32}
 .tab.on .tico{opacity:1}
 .tab:active{color:#fff}
 /* unit thumbnails + cards */
 .thumb{width:42px;height:42px;border-radius:8px;object-fit:cover;border:1px solid var(--line2);background:var(--surface3);flex:none}
 .unititem .nm{display:block}.unititem .meta{display:block;font-weight:400}
-.star{border:none;background:none;color:var(--line2);width:36px;height:36px;min-height:36px;display:inline-flex;align-items:center;justify-content:center;padding:0;flex:none}
+.star{border:none;background:none;color:var(--line2);width:36px;height:36px;min-height:36px;display:inline-flex;align-items:center;justify-content:center;padding:0;flex:none;position:relative}
+.star::after{content:"";position:absolute;inset:-4px}
 .star svg{width:20px;height:20px}
 .star.on{color:var(--orange)}
 .star:active{transform:scale(.9)}
@@ -375,6 +380,7 @@ body{padding-bottom:calc(var(--tabbar-h) + var(--safe-b));}
 .cardfig.wide{max-width:460px;margin:.5rem auto}
 .usec{margin:1rem 0 .2rem;font-size:.8rem;letter-spacing:.1em;text-transform:uppercase;color:var(--olive-d);border-bottom:1px solid var(--line);padding-bottom:.2rem}
 .kw{cursor:pointer;border:1px solid var(--line2)}
+.kw.plain{cursor:default;color:var(--muted)}
 .kw:active{background:var(--orange);color:#1c1d1a}
 /* lightbox */
 .lb{text-align:center}.lb img{max-width:100%;max-height:72vh;border-radius:8px;border:1px solid var(--line2)}
@@ -521,7 +527,8 @@ footer.src{padding-bottom:calc(1.4rem + var(--tabbar-h) + var(--safe-b))}
 .rec-hl{animation:recpulse 2s ease-out 1}
 @keyframes recpulse{0%{box-shadow:0 0 0 0 rgba(232,136,28,.0);outline:2px solid rgba(232,136,28,0)}12%{box-shadow:0 0 0 4px rgba(232,136,28,.45);outline:2px solid var(--orange)}100%{box-shadow:0 0 0 0 rgba(232,136,28,0);outline:2px solid rgba(232,136,28,0)}}
 
-.ucls{margin-left:.4rem;background:transparent;border:1px solid var(--line2);color:var(--muted);border-radius:8px;min-width:36px;min-height:36px;font-size:1rem;line-height:1;cursor:pointer}
+.ucls{margin-left:.4rem;background:transparent;border:1px solid var(--line2);color:var(--muted);border-radius:8px;min-width:36px;min-height:36px;font-size:1rem;line-height:1;cursor:pointer;position:relative}
+.ucls::after{content:"";position:absolute;inset:-5px}
 .ucls:hover{border-color:var(--orange);color:var(--orange-d)}
 
 .rsub{font-family:var(--font-disp);font-size:1rem;letter-spacing:.04em;color:var(--olive-d);text-transform:uppercase;margin:1.15rem 0 .35rem;padding-bottom:.2rem;border-bottom:1px solid var(--line2)}

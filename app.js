@@ -105,6 +105,11 @@ let _spinT=null;
 function spin(on){const s=$("#spinner");if(!s)return;
   if(on){_spinT=setTimeout(()=>s.classList.add("show"),200);}else{clearTimeout(_spinT);s.classList.remove("show");}}
 
+/* ---------- programmatic scroll: .wrap (overflow-x:hidden) is the real scroll container, so
+   window.scrollTo() is a silent no-op; route every programmatic scroll through the live scroller ---------- */
+function pageScroller(){const w=document.querySelector(".wrap");
+  return (w&&w.scrollHeight>w.clientHeight+1)?w:(document.scrollingElement||document.documentElement);}
+function scrollTop0(){const s=pageScroller();if(s)s.scrollTop=0;}
 /* ---------- stat heatmap (across whole game; respects betterWhen) ---------- */
 const RANGE={};
 STAT_ORDER.forEach(k=>{let mn=99,mx=-99;DATA.units.forEach(u=>{const v=u.stats[k];if(/^-?\d+$/.test(v)){const n=+v;if(n<mn)mn=n;if(n>mx)mx=n;}});RANGE[k]={mn,mx};});
@@ -122,9 +127,37 @@ function statPop(k){const t=TERM[k];
     <span class="bw">${t.betterWhen==="lower"?"&#9660; Lower is better":"&#9650; Higher is better"}</span>
     <p class="small muted" style="margin-top:.7rem">${esc(DATA.successRule)}</p>`);}
 window.statPop=statPop; window.popClose=popClose;
-/* keyword / personal-ability popover (used inline) */
-function termPop(name){
-  const kw=DATA.keywords[name]||DATA.personalAbilities[name];
+/* keyword / personal-ability popover (used inline).
+   Lookup is NORMALIZED so every printed chip variant resolves (live digits → (#), bare digits,
+   case, straight/curly apostrophes, card-printed typos) while the chip DISPLAY stays verbatim.
+   Last resort: the unit's own KIT definitions (e.g. Force, defined only on cards). */
+const KW_ALIAS={"target acqusition":"target acquisition"}; /* CCC Spotter card typo (OQ-021) — display stays verbatim */
+function kwNorm(s){return String(s).replace(/[\u2018\u2019]/g,"'").replace(/\s+/g," ").trim().toLowerCase();}
+let _KWMAP=null;
+function kwMap(){if(_KWMAP)return _KWMAP;_KWMAP={};
+  [DATA.keywords,DATA.personalAbilities].forEach(src=>Object.keys(src).forEach(k=>{const n=kwNorm(k);if(!(n in _KWMAP))_KWMAP[n]=src[k];}));
+  return _KWMAP;}
+function kwEntry(name,uIdx){
+  const m=kwMap();let n=kwNorm(name);if(KW_ALIAS[n])n=KW_ALIAS[n];
+  if(m[n])return m[n];
+  const h=n.replace(/\((\d+)\)/,"(#)").replace(/ (\d+)$/," (#)");if(m[h])return m[h];
+  const b=n.replace(/\s*\(\d+\)\s*/g," ").replace(/\s+/g," ").trim();if(m[b])return m[b];
+  if(uIdx!=null&&DATA.units[uIdx]){const kit=DATA.units[uIdx].kit||[];
+    const hit=kit.find(x=>{const kn=kwNorm(x.name);return kn===n||kn===b;});if(hit)return hit;}
+  return null;}
+/* split compound kw cells into the separate stacked keywords the card prints (audit-verified stacks:
+   "Blind"+"Template", "Penetrate (2)"+"Sniper", "Melee (2)"+"Scramble", and all "A / B" cells) */
+function kwFrags(k){k=String(k);
+  if(/^blind template$/i.test(k.trim()))return["Blind","Template"];
+  if(k.indexOf("/")>=0)return k.split("/").map(s=>s.trim()).filter(Boolean);
+  const m=k.match(/^(.+?\(\d+\))\s+(\S.+)$/);if(m)return[m[1].trim(),m[2].trim()];
+  return[k.trim()];}
+function kwChips(kwArr,uIdx){
+  return (kwArr||[]).reduce((a,k)=>a.concat(kwFrags(k)),[]).map(k=>kwEntry(k,uIdx)
+    ?`<button class="kw" onclick="termPop('${esc(k).replace(/'/g,"\\'")}',${uIdx})" translate="no">${esc(k)}</button>`
+    :`<span class="kw plain" translate="no">${esc(k)}</span>`).join("");}
+function termPop(name,uIdx){
+  const kw=kwEntry(name,uIdx);
   if(!kw){return;}
   popOpen(`<h4>${tn(kw.name)}</h4><div>${escText(kw.text)}</div>`);}
 window.termPop=termPop;
@@ -136,7 +169,7 @@ function manualCue(){ if(_manualCued)return ""; _manualCued=true; return "cue"; 
 const MANUAL={
  home:{steps:["This is your <b>operations dashboard</b>. Move between sections using the <b>tab bar</b> below (on tablet &amp; desktop) or the <b>menu button (&#9776;)</b> at the top-right (on phones).",
    "Tap a <b>quick-entry card</b> to jump straight into a section.",
-   "Open the six battlefield <b>Tools</b> from the Tools button &mdash; in the header on tablet &amp; desktop, or inside the <b>&#9776; menu</b> on phones &mdash; they overlay any section.",
+   "Open the seven battlefield <b>Tools</b> (plus your Favorites) from the Tools button &mdash; in the header on tablet &amp; desktop, or inside the <b>&#9776; menu</b> on phones &mdash; they overlay any section.",
    "<b>Search</b> is always in the header (top-right) &mdash; find any unit, card, mission, rule, or keyword instantly."],
    tip:"Sign in (optional) &mdash; in the header on tablet &amp; desktop, or inside the <b>&#9776; menu</b> on phones &mdash; to keep teams, trackers and favorites across sessions."},
  megacons:{steps:["Pick a <b>MegaCon</b> (faction) to see its roster in card order.",
@@ -290,10 +323,11 @@ function navTo(id,opts){opts=opts||{};
   TAB_IDS.forEach(t=>{const p=$("#panel-"+t);if(p)p.classList.toggle("active",t===id);});
   $$("#tabbar .tab").forEach(b=>b.classList.toggle("on",b.dataset.tab===id));
   if(!opts.fromPopstate){history.pushState({tab:id},"","#"+id);}
-  window.scrollTo(0,0);
+  scrollTop0();
 }
 window.navTo=navTo;
 window.addEventListener("popstate",e=>{
+  if($("#search").classList.contains("open")){closeSearch();return;}
   if($("#navMenu")&&$("#navMenu").classList.contains("open")){closeNav();return;}
   if($("#tools").classList.contains("open")){closeTools();return;}
   if($("#pop").classList.contains("open")){popClose();return;}
@@ -341,7 +375,7 @@ builders.home=function(p){
      <div class="herotag" translate="no">Official Field Companion</div>
    </div>
    <div class="homewrap">
-     <p class="vsub" style="text-align:center;margin:.9rem 0 .2rem">Your complete tactical reference for MERCS 2.5 — every unit, card, mission and rule, plus six battlefield tools.</p>
+     <p class="vsub" style="text-align:center;margin:.9rem 0 .2rem">Your complete tactical reference for MERCS 2.5 — every unit, card, mission and rule, plus seven battlefield tools and your Favorites.</p>
      ${manual("home")}
      <h2 class="vh" style="margin-top:.6rem">Sections</h2>
      <div class="qtiles">${quick.map(q=>`<button class="tile" data-go="${q.id}"><span class="edge"></span><span class="ico">${q.ico}</span><h3 translate="no">${esc(q.t)}</h3><p>${esc(q.d)}</p><span class="go">Open &#8250;</span></button>`).join("")}</div>
@@ -391,14 +425,14 @@ function showUnit(i){const u=DATA.units[i];
       <div class="bar"><i style="width:${w}%;background:${col}"></i></div></button>`;}).join("");
   const weapons=u.weapons.length?`<h4 class="usec">Weapons</h4><table class="wtable"><tr><th>Weapon</th><th>B</th><th>S</th><th>M</th><th>L</th><th>Keywords</th></tr>
     ${u.weapons.map(w=>`<tr><td class="wn" translate="no">${esc(w.name)}</td><td translate="no">${esc(w.bands.B||'–')}</td><td translate="no">${esc(w.bands.S||'–')}</td><td translate="no">${esc(w.bands.M||'–')}</td><td translate="no">${esc(w.bands.L||'–')}</td>
-      <td>${(w.kw||[]).map(k=>`<button class="kw" onclick="termPop('${esc(k).replace(/'/g,"\\'")}')" translate="no">${esc(k)}</button>`).join('')||'<span class="muted">–</span>'}</td></tr>`).join("")}</table>`:"";
+      <td>${kwChips(w.kw,i)||'<span class="muted">–</span>'}</td></tr>`).join("")}</table>`:"";
   const abil=u.abilities.length?`<h4 class="usec">Personal Abilities</h4><ul class="ablist">${u.abilities.map(a=>{const m=a.match(/^(.+?):\s*([\s\S]*)$/);return m?`<li><b translate="no">${esc(m[1])}</b>: ${esc(m[2])}</li>`:`<li>${esc(a)}</li>`;}).join("")}</ul>`:"";
   const kit=(u.kit&&u.kit.length)?`<h4 class="usec">Kit &amp; Keywords</h4><ul class="ablist">${u.kit.map(k=>`<li><b translate="no">${esc(k.name)}</b>: ${esc(k.text)}</li>`).join("")}</ul>`:"";
   const d=$("#megDetail");
   d.innerHTML=`<button class="rback" onclick="megBack()" style="margin:.1rem 0 .7rem">&#8249; Back</button><div class="unitcard" id="rec-unit-${esc(u.id)}"><div class="uhead"><span class="fac" translate="no">${esc(u.faction)}</span>
       <span class="chip" translate="no">${esc(u.archetype)}</span>
       ${u.hasQuick?'<span class="chip q">Quick</span>':''}${u.deployable?'<span class="chip dep">Deployable</span>':''}
-      <span class="grow"></span>${starBtn("units",u.id,cap(u.name))}</div>
+      <span class="grow"></span>${starBtn("units",u.id,cap(u.name))}<button class="ucls" aria-label="Close card" title="Close" onclick="megBack()">&#10005;</button></div>
     <div class="cardimgs">
       <figure class="cardfig"><img loading="eager" src="${esc(u.imgFront)}" alt="${esc(cap(u.name))} card front"><figcaption>Front</figcaption></figure>
       <figure class="cardfig"><img loading="eager" src="${esc(u.imgBack)}" alt="${esc(cap(u.name))} card back"><figcaption>Back</figcaption></figure>
@@ -408,19 +442,21 @@ function showUnit(i){const u=DATA.units[i];
     ${weapons}${abil}${kit}
     <div class="divider"></div><div class="small muted">Tap a stat for its meaning; tap a keyword for its rule. Tap a card image to view full size.</div></div>`;
   wireStars(d);
+  const _uh=d.querySelector(".uhead");if(_uh)_uh.onclick=megHeadClose;
   $$(".cardfig img",d).forEach(img=>img.onclick=()=>lightbox(img.src,img.alt));
   var _ml=$("#megList"); if(_ml) _ml.style.display="none";
   // Land with the TOP of the card just under the sticky header — not the page heading, not mid-card.
-  const landTop=()=>{const hdr=document.querySelector("header.bar");const off=hdr?hdr.offsetHeight:0;
-    const y=d.getBoundingClientRect().top+window.pageYOffset-off-4;window.scrollTo(0,Math.max(0,y));};
+  const landTop=()=>{const hdr=document.querySelector("header.bar");const s=pageScroller();
+    const hb=hdr?hdr.getBoundingClientRect().bottom:0;
+    s.scrollTop=Math.max(0,s.scrollTop+d.getBoundingClientRect().top-hb-4);};
   landTop();requestAnimationFrame(landTop);
   // Re-assert once each card image has loaded so async image growth cannot shift the view mid-card.
   $$(".cardimgs img",d).forEach(img=>{if(!img.complete)img.addEventListener("load",landTop,{once:true});});
 }
 window.showUnit=showUnit;
-function megBack(){const d=$("#megDetail");if(d)d.innerHTML="";const ml=$("#megList");if(ml)ml.style.display="";window.scrollTo(0,0);}
+function megBack(){const d=$("#megDetail");if(d)d.innerHTML="";const ml=$("#megList");if(ml)ml.style.display="";scrollTop0();}
 window.megBack=megBack;
-function megHeadClose(ev){if(ev.target.closest&&(ev.target.closest(".star")||ev.target.closest(".kw")||ev.target.closest(".stat")))return;megBack();}
+function megHeadClose(ev){if(ev.target.closest&&(ev.target.closest(".star")||ev.target.closest(".kw")||ev.target.closest(".stat")||ev.target.closest(".ucls")))return;megBack();}
 window.megHeadClose=megHeadClose;
 
 /* image lightbox */
@@ -628,7 +664,7 @@ builders.rules=function(p){
       <div class="rtoc-h">Contents</div>
       <ol class="rtoc">${ents.map((e,i)=>`<li><button class="rtoc-i" data-i="${i}"><span class="rtoc-n">${i+1}</span><span class="rtoc-t" translate="no">${esc(e.title)}</span><span class="rtoc-ar">&#8250;</span></button></li>`).join("")}</ol></div>`;
     $$("#rulesBody .rtoc-i",p).forEach(b=>b.onclick=()=>showSection(+b.dataset.i));
-    window.scrollTo(0,0);
+    scrollTop0();
   }
   function showSection(i){
     const ents=entriesFor(CUR_MODE);
@@ -646,7 +682,7 @@ builders.rules=function(p){
     $("#rBack",p).onclick=showContents;
     const pb=$("#rPrev",p);if(pb&&prev)pb.onclick=()=>showSection(i-1);
     const nb=$("#rNext",p);if(nb&&next)nb.onclick=()=>showSection(i+1);
-    window.scrollTo(0,0);
+    scrollTop0();
   }
   // expose deep-link opener: open a section directly by its slug (search → a rules section)
   p._ruleOpen=(m,slug)=>{
@@ -1140,12 +1176,14 @@ function buildSearchIndex(){
 function hl(text,q){if(!q)return esc(text);const i=text.toLowerCase().indexOf(q.toLowerCase());if(i<0)return esc(text);
   return esc(text.slice(0,i))+"<mark>"+esc(text.slice(i,i+q.length))+"</mark>"+esc(text.slice(i+q.length));}
 function openSearch(){
-  $("#search").classList.add("open");
+  const s=$("#search");s.classList.add("open");
+  if(!s._pushed){history.pushState({search:true},"","#search");s._pushed=true;}
   const inp=$("#searchInput");inp.value="";$("#searchResults").innerHTML=`<div class="empty">Search units, cards, traits, missions, rules and keywords.</div>`;
   if(!SEARCH_INDEX)buildSearchIndex();
   setTimeout(()=>inp.focus(),50);
 }
-function closeSearch(){$("#search").classList.remove("open");}
+function closeSearch(){const s=$("#search");s.classList.remove("open");s._pushed=false;
+  if(location.hash==="#search")history.replaceState({tab:CURRENT_TAB},"","#"+(CURRENT_TAB||"home"));}
 window.closeSearch=closeSearch;
 let _searchT=null;
 function runSearch(q){q=q.trim();const out=$("#searchResults");
@@ -1251,7 +1289,7 @@ function shopMercs(){window.open("https://www.mercsminiatures.com/store","_blank
 window.shopMercs=shopMercs;
 function openAbout(){
   popOpen(`<h4>About &amp; Privacy</h4>
-    <p class="small" style="color:var(--ink2)">The official MERCS Companion by <a href="https://digirunestudios.com" target="_blank" rel="noopener" class="dr-link"><b>DigiRune Studios</b></a>. A complete field reference for the MERCS 2.5 tabletop game — every unit, contingency card, corporate trait, operation, rule, modifier and keyword, plus six battlefield tools.</p>
+    <p class="small" style="color:var(--ink2)">The official MERCS Companion by <a href="https://digirunestudios.com" target="_blank" rel="noopener" class="dr-link"><b>DigiRune Studios</b></a>. A complete field reference for the MERCS 2.5 tabletop game — every unit, contingency card, corporate trait, operation, rule, modifier and keyword, plus seven battlefield tools and your Favorites.</p>
     <h4 style="font-size:1rem;margin-top:.8rem">Privacy</h4>
     <p class="small" style="color:var(--ink2)">This app collects <b>no personal data</b>. It works fully offline. The optional local account (Sign In) saves your teams, trackers and favorites only on this device — nothing is sent anywhere and there is no password or server.</p>
     <h4 style="font-size:1rem;margin-top:.8rem">Credits &amp; License</h4>
