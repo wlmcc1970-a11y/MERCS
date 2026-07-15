@@ -1372,12 +1372,8 @@ window.closeNav=closeNav;
 })();
 
 /* ============================================================
-   PWA INSTALL PROMPT + UPDATE TOAST
+   SERVICE-WORKER UPDATE TOAST
    ============================================================ */
-let deferredPrompt=null;
-window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();deferredPrompt=e;const b=$("#installBtn");if(b)b.style.display="inline-flex";});
-window.addEventListener("appinstalled",()=>{deferredPrompt=null;const b=$("#installBtn");if(b)b.style.display="none";toast("Installed — find MERCS on your home screen");});
-function doInstall(){if(!deferredPrompt)return;deferredPrompt.prompt();deferredPrompt.userChoice.finally(()=>{deferredPrompt=null;const b=$("#installBtn");if(b)b.style.display="none";});}
 
 /* service worker registration + update flow */
 /* ============================================================
@@ -1507,7 +1503,6 @@ function boot(){
   $("#toolsBtn").onclick=openToolsMenu;
   $("#toolsClose").onclick=closeTools;
   $("#toolsBack").onclick=openToolsMenu;
-  $("#installBtn").onclick=doInstall;
   // mobile hamburger nav
   buildNavMenu();
   const _ham=$("#navHamBtn");if(_ham)_ham.onclick=openNav;

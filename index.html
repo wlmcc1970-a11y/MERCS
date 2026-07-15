@@ -317,7 +317,6 @@ body{padding-bottom:calc(var(--tabbar-h) + var(--safe-b));}
 .iconbtn:active{background:rgba(0,0,0,.32)}
 .iconbtn.in{background:var(--orange);color:#1c1d1a;border-color:var(--orange-d)}
 .barbtns{display:flex;align-items:center;gap:.4rem;margin-left:auto}
-.installbtn{display:none}
 /* ---- launch splash (shown once on real load; logo is the focus) ---- */
 .launch{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;
   padding:calc(var(--safe-t) + 1rem) 1rem calc(var(--safe-b) + 1rem);
@@ -595,7 +594,7 @@ header.bar{flex-wrap:wrap}
 
 
 @media(max-width:700px){
-  .bar .barbtns #installBtn,.bar .barbtns #xlateBtn,.bar .barbtns #themeBtn,.bar .barbtns #toolsBtn,.bar .barbtns .acctbtn{display:none!important}
+  .bar .barbtns #xlateBtn,.bar .barbtns #themeBtn,.bar .barbtns #toolsBtn,.bar .barbtns .acctbtn{display:none!important}
   header.bar{flex-wrap:nowrap}
   .bar .barbtns{order:8;flex-wrap:nowrap;margin-left:auto}
   .bar .navham{order:9;margin-left:.3rem;flex:none}
@@ -616,7 +615,6 @@ header.bar{flex-wrap:wrap}
     <span class="ttl">Companion</span>
     <button class="navham" id="navHamBtn" aria-label="Menu" aria-expanded="false" title="Menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
     <div class="barbtns">
-      <button class="iconbtn installbtn" id="installBtn" title="Install app" aria-label="Install app"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v11"/><path d="M8 11l4 4 4-4"/><path d="M4 19h16"/></svg></button>
       <button class="iconbtn" id="searchBtn" title="Search" aria-label="Search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg></button>
       <button class="iconbtn" id="xlateBtn" title="Translate" aria-label="Translate"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.5 2.5 15.5 0 18M12 3c-2.5 2.5-2.5 15.5 0 18"/></svg></button>
       <button class="iconbtn themebtn" id="themeBtn" title="Low-light mode" aria-label="Toggle low-light mode"><svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.5 1.5M17.5 17.5L19 19M19 5l-1.5 1.5M6.5 17.5L5 19"/></svg><svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg></button>
