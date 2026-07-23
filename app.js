@@ -1384,7 +1384,7 @@ function applyTheme(mode){
   const dark=mode==="dark";
   document.documentElement.setAttribute("data-theme",dark?"dark":"light");
   const m=document.querySelector('meta[name=theme-color]');
-  if(m)m.setAttribute("content",dark?"#15160f":"#5d5c27");
+  if(m)m.setAttribute("content",dark?"#0e1c19":"#174541");
   const tb=$("#themeBtn");
   if(tb){tb.classList.toggle("in",dark);tb.setAttribute("title",dark?"Low-light mode on":"Low-light mode");}
 }
