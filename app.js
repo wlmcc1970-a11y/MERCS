@@ -76,18 +76,45 @@ function flowInline(s){
     .filter(Boolean).join("<br><br>");
 }
 
-/* ---------- persistence: clean-slate by default; optional local account ---------- */
-let SESSION={}; let ACCOUNT=null; const SAVE_PREFIX="mercs.v1.save.";
+/* ---------- persistence: clean-slate by default; optional device save or cloud sync ----------
+   ACCOUNT: null (guest, in-memory only) | {mode:'device'} | {mode:'cloud',uid,provider,name,email,photo}
+   Cloud sign-in (Google/Apple via Firebase Auth) mirrors the whole SESSION object to Firestore for
+   cross-device sync; that layer lives in auth.js (window.__mercsSync) and loads right after this file.
+   Every non-sync feature stays fully offline. ---------- */
+let SESSION={}; let ACCOUNT=null;
+const SAVE_LOCAL="mercs.v1.session";   // single local blob: device save + cloud mirror
+const SAVE_MODE ="mercs.v1.mode";      // 'device' | 'cloud' — remembered to resume on next launch
+const SAVE_DEVICE="mercs.v1.device";   // stable per-device id (live-sync echo guard)
 const Store={
   get(k,d){return (k in SESSION)?SESSION[k]:d;},
-  set(k,v){SESSION[k]=v; if(ACCOUNT){try{localStorage.setItem(SAVE_PREFIX+ACCOUNT,JSON.stringify(SESSION));}catch(e){}}}
+  set(k,v){SESSION[k]=v; persistLocal(); if(window.__mercsSync)window.__mercsSync.schedulePush();},
+  del(k){ if(k in SESSION)delete SESSION[k]; persistLocal(); if(window.__mercsSync)window.__mercsSync.schedulePush();}
 };
-function listSaves(){try{return Object.keys(localStorage).filter(k=>k.startsWith(SAVE_PREFIX)).map(k=>k.slice(SAVE_PREFIX.length));}catch(e){return[];}}
-function signIn(name){name=(name||"").trim();if(!name)return;ACCOUNT=name;
-  try{const raw=localStorage.getItem(SAVE_PREFIX+name);SESSION=raw?(JSON.parse(raw)||{}):{};}catch(e){SESSION={};}
-  updateAccountUI();rebuildAll();toast("Signed in as "+name+" — progress saves on this device");}
-function signOut(){ACCOUNT=null;updateAccountUI();toast("Signed out — this session won't be saved");}
-function updateAccountUI(){const b=$("#acctBtn");if(b){b.innerHTML=ACCOUNT?("&#9670; "+esc(ACCOUNT)):"Sign In";b.classList.toggle("in",!!ACCOUNT);}}
+function persistLocal(){ if(ACCOUNT){ try{localStorage.setItem(SAVE_LOCAL,JSON.stringify(SESSION));}catch(e){} } }
+function loadLocalSession(){ try{const raw=localStorage.getItem(SAVE_LOCAL);SESSION=(raw?JSON.parse(raw):null)||{};}catch(e){SESSION={};} }
+function hasLocalData(){ try{return !!(SESSION&&Object.keys(SESSION).length);}catch(e){return false;} }
+/* resume the saved mode on launch (cloud is re-established async by auth.js onAuthStateChanged) */
+function restoreSession(){ let m=null; try{m=localStorage.getItem(SAVE_MODE);}catch(e){}
+  if(m==='device'){ ACCOUNT={mode:'device'}; loadLocalSession(); } }
+/* device-only save (no cloud) — keeps any current in-memory guest selections */
+function signInDevice(){ if(!hasLocalData())loadLocalSession(); ACCOUNT={mode:'device'};
+  try{localStorage.setItem(SAVE_MODE,'device');}catch(e){} persistLocal(); updateAccountUI(); rebuildAll(); toast("Saving on this device"); }
+/* sign out of whichever mode is active */
+function signOut(){
+  if(ACCOUNT&&ACCOUNT.mode==='cloud'&&window.__mercsSync){ window.__mercsSync.signOutCloud(); return; }
+  ACCOUNT=null; try{localStorage.removeItem(SAVE_MODE);}catch(e){}
+  updateAccountUI(); toast("Signed out — this session won't be saved");
+}
+function updateAccountUI(){
+  const b=$("#acctBtn");
+  if(b){
+    if(ACCOUNT&&ACCOUNT.mode==='cloud'){ b.innerHTML="&#9670; "+esc(String(ACCOUNT.name||ACCOUNT.email||"Account").split(" ")[0]); b.classList.add("in"); }
+    else if(ACCOUNT&&ACCOUNT.mode==='device'){ b.innerHTML="&#9670; Saved"; b.classList.add("in"); }
+    else { b.innerHTML="Sign In"; b.classList.remove("in"); }
+  }
+  const nl=document.querySelector('#navActs [data-act="account"] span:last-child');
+  if(nl){ nl.textContent = (ACCOUNT&&ACCOUNT.mode==='cloud') ? String(ACCOUNT.name||"Account").split(" ")[0] : (ACCOUNT&&ACCOUNT.mode==='device') ? "Saved on device" : "Sign In"; }
+}
 
 /* ---------- toast (3000ms, one at a time) ---------- */
 function toast(m){const t=$("#toast");t.textContent=m;t.classList.add("show");clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove("show"),3000);}
@@ -1291,7 +1318,7 @@ function openAbout(){
   popOpen(`<h4>About &amp; Privacy</h4>
     <p class="small" style="color:var(--ink2)">The official MERCS Companion by <a href="https://digirunestudios.com" target="_blank" rel="noopener" class="dr-link"><b>DigiRune Studios</b></a>. A complete field reference for the MERCS 2.5 tabletop game — every unit, contingency card, corporate trait, operation, rule, modifier and keyword, plus seven battlefield tools and your Favorites.</p>
     <h4 style="font-size:1rem;margin-top:.8rem">Privacy</h4>
-    <p class="small" style="color:var(--ink2)">This app collects <b>no personal data</b>. It works fully offline. The optional local account (Sign In) saves your teams, trackers and favorites only on this device — nothing is sent anywhere and there is no password or server.</p>
+    <p class="small" style="color:var(--ink2)">The app works fully offline and shows <b>no ads</b>. Without signing in it collects <b>no personal data</b> &mdash; nothing leaves your device. Signing in with <b>Google</b> or <b>Apple</b> is optional; it creates a private account so your favorites, strike teams and trackers <b>sync across your devices</b>. We then store only your name, email and your in-app selections, using Google Firebase (Authentication + Firestore) as the processor. We never sell your data or use it for ads. You can delete your account and all synced data anytime from <b>Sign In &rarr; Delete account &amp; data</b>, or read the full policy and deletion steps at <a href="https://mercs.digirunestudios.com/privacy.html" target="_blank" rel="noopener" class="dr-link">mercs.digirunestudios.com/privacy</a>.</p>
     <h4 style="font-size:1rem;margin-top:.8rem">Credits &amp; License</h4>
     <p class="small" style="color:var(--ink2)">MERCS&trade; &copy; Fifth Angel Studios — used under license. All stats, cards and rules are transcribed verbatim from the MERCS 2.5 source. Interface icons are hand-authored by DigiRune Studios; fonts (Oswald, Days One, Barlow) are served from Google Fonts under the SIL Open Font License.</p>
     <div class="row" style="margin-top:.9rem"><button class="btn" id="abShop"><span class="ico" style="width:18px;height:18px;display:inline-block;vertical-align:-3px">${ICO.cart}</span> Shop MERCS</button></div>`);
@@ -1460,19 +1487,58 @@ function showUpdateToast(){
 /* ============================================================
    ACCOUNT
    ============================================================ */
+const GLOGO='<svg width=\"18\" height=\"18\" viewBox=\"0 0 48 48\" aria-hidden=\"true\"><path fill=\"#EA4335\" d=\"M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z\"/><path fill=\"#4285F4\" d=\"M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z\"/><path fill=\"#FBBC05\" d=\"M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z\"/><path fill=\"#34A853\" d=\"M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z\"/></svg>';
+const ALOGO='<svg width=\"15\" height=\"18\" viewBox=\"0 0 842 1000\" aria-hidden=\"true\"><path fill=\"currentColor\" d=\"M824.7 779c-15.1 34.9-33 67-53.7 96.5-28.3 40.2-51.5 68-69.4 83.5-27.8 25.4-57.6 38.4-89.5 39.1-22.9 0-50.5-6.5-82.7-19.7-32.3-13.1-62-19.6-89.2-19.6-28.5 0-59 6.5-91.6 19.6-32.6 13.2-58.9 20.1-79 20.8-30.6 1.3-61.1-12.1-91.6-40.2-19.4-16.9-43.6-45.7-72.6-86.4-31.1-43.5-56.7-93.9-76.8-151.4C10.6 658.3 0 600.4 0 544.3c0-64.3 13.9-119.7 41.8-166.1 21.9-37.3 51.1-66.7 87.6-88.3s75.9-32.6 118.3-33.3c24.3 0 56.1 7.5 95.6 22.2 39.4 14.8 64.7 22.3 75.8 22.3 8.3 0 36.4-8.8 84.1-26.3 45.1-16.2 83.2-22.9 114.4-20.3 84.6 6.8 148.1 40.2 190.3 100.4-75.7 45.9-113.1 110.1-112.4 192.4.7 64.1 24 117.5 69.8 159.9 20.8 19.7 44 34.9 69.8 45.7-5.6 16.2-11.5 31.7-17.8 46.6zM623.5 20.7c0 48-17.5 92.8-52.5 134.3-42.2 49.3-93.2 77.8-148.6 73.3-.7-5.8-1.1-11.9-1.1-18.3 0-46.1 20-95.4 55.6-135.7 17.8-20.4 40.4-37.4 67.9-51 27.4-13.4 53.3-20.8 77.7-22.1.7 5.8 1 11.7 1 17.6z\"/></svg>';
 function openAccount(){
-  if(ACCOUNT){popOpen(`<h4>Account</h4><p class="small">Signed in as <b translate="no">${esc(ACCOUNT)}</b>. Your teams, trackers and favorites save automatically on this device.</p>
-    <div class="row" style="margin-top:.7rem"><button class="btn" id="acOut">Sign out</button></div>`);
+  const A=ACCOUNT;
+  if(A&&A.mode==='cloud'){
+    const who=esc(A.name||A.email||'your account');
+    const prov=A.provider==='apple.com'?'Apple':(A.provider==='google.com'?'Google':'your account');
+    const st=(window.__mercsSync&&window.__mercsSync.statusText)?window.__mercsSync.statusText:'Synced across your devices';
+    popOpen(`<h4>Account</h4>
+      <p class="small">Signed in with <b>${prov}</b> as <b translate="no">${who}</b>.</p>
+      <p class="small muted" id="acSync">${esc(st)}</p>
+      <p class="small muted">Your favorites, strike teams and tracker state sync automatically across every device you sign in on.</p>
+      <div class="row" style="margin-top:.8rem"><button class="btn" id="acOut">Sign out</button></div>
+      <div class="row" style="margin-top:.5rem"><button class="btn danger" id="acDelete">Delete account &amp; data</button></div>
+      <p class="small muted" style="margin-top:.5rem">Deleting permanently removes your synced data and your sign-in account. <a href="#" id="acPriv" class="dr-link">Privacy</a>.</p>`);
     $("#acOut").onclick=()=>{signOut();popClose();};
-  }else{const saves=listSaves();
-    popOpen(`<h4>Sign in to save</h4>
-      <p class="small muted">Optional. Your favorites, strike teams and tracker state are saved on <b>this device</b> (no password needed) so your progress carries between sessions. Cross-device sync with Google or Apple sign-in is coming soon.</p>
-      <div class="row" style="margin-top:.6rem"><input id="acName" type="text" placeholder="Profile name" style="flex:1" autocomplete="off"></div>
-      ${saves.length?`<div class="tagline" style="margin-top:.55rem">Saved here: ${saves.map(x=>`<button class="chip" data-load="${esc(x)}">${esc(x)}</button>`).join("")}</div>`:""}
-      <div class="row" style="margin-top:.6rem"><button class="btn" id="acGo">Sign in</button></div>`);
-    $("#acGo").onclick=()=>{signIn($("#acName").value);popClose();};
-    $$("#popcard [data-load]").forEach(b=>b.onclick=()=>{signIn(b.dataset.load);popClose();});}
+    $("#acDelete").onclick=()=>confirmDeleteAccount();
+    const _p=$("#acPriv"); if(_p)_p.onclick=(e)=>{e.preventDefault();popClose();openAbout();};
+  }else if(A&&A.mode==='device'){
+    popOpen(`<h4>Saved on this device</h4>
+      <p class="small muted">Your selections are saved on <b>this device</b> only. Sign in to sync them across all your devices.</p>
+      <div class="signin-official">
+        <button class="gsi-btn" id="siGoogle">${GLOGO}<span>Sign in with Google</span></button>
+        <button class="asi-btn" id="siApple">${ALOGO}<span>Sign in with Apple</span></button>
+      </div>
+      <div class="row" style="margin-top:.35rem"><button class="btn ghost sm" id="siStop">Stop saving on this device</button></div>`);
+    $("#siGoogle").onclick=()=>{if(window.__mercsSync)window.__mercsSync.signInGoogle();};
+    $("#siApple").onclick=()=>{if(window.__mercsSync)window.__mercsSync.signInApple();};
+    $("#siStop").onclick=()=>{signOut();popClose();};
+  }else{
+    popOpen(`<h4>Sign in to sync</h4>
+      <p class="small muted">Keep your favorites, strike teams and trackers and sync them across all your devices. Optional &mdash; you can also just save on this device.</p>
+      <div class="signin-official">
+        <button class="gsi-btn" id="siGoogle">${GLOGO}<span>Sign in with Google</span></button>
+        <button class="asi-btn" id="siApple">${ALOGO}<span>Sign in with Apple</span></button>
+      </div>
+      <div class="row" style="margin-top:.2rem"><button class="btn ghost sm" id="siDevice">Just save on this device</button></div>
+      <p class="small muted" style="margin-top:.55rem">Signing in creates a private account that stores only your in-app selections &mdash; no tracking, no ads. You can delete it anytime. <a href="#" id="siPriv" class="dr-link">Privacy</a>.</p>`);
+    $("#siGoogle").onclick=()=>{if(window.__mercsSync)window.__mercsSync.signInGoogle();};
+    $("#siApple").onclick=()=>{if(window.__mercsSync)window.__mercsSync.signInApple();};
+    $("#siDevice").onclick=()=>{signInDevice();popClose();};
+    const _p=$("#siPriv"); if(_p)_p.onclick=(e)=>{e.preventDefault();popClose();openAbout();};
+  }
 }
+function confirmDeleteAccount(){
+  popOpen(`<h4>Delete account &amp; data?</h4>
+    <p class="small">This permanently deletes your synced data and your sign-in account. Copies on your other devices are removed on their next sync. This can't be undone.</p>
+    <div class="row" style="margin-top:.85rem"><button class="btn danger" id="dlYes">Delete everything</button> <button class="btn ghost" id="dlNo">Cancel</button></div>`);
+  $("#dlNo").onclick=popClose;
+  $("#dlYes").onclick=()=>{ if(window.__mercsSync)window.__mercsSync.deleteAccount(); popClose(); };
+}
+window.openAccount=openAccount;
 
 /* ============================================================
    BOOT
@@ -1492,7 +1558,25 @@ function initLaunchSplash(){
   const t=setTimeout(dismiss,1400);
 }
 
+/* ---------- first-run tip: sign-in syncs across devices (optional) — Forge CHECK 1.5 ---------- */
+function initSyncTip(){
+  try{ if(localStorage.getItem("mercs.v1.synctip")) return; }catch(e){}
+  if(ACCOUNT) return;                       // already saving/synced -> no prompt
+  setTimeout(()=>{
+    try{ if(localStorage.getItem("mercs.v1.synctip")) return; }catch(e){}
+    if(ACCOUNT || document.getElementById("syncTip")) return;
+    const bar=document.createElement("div"); bar.id="syncTip";
+    bar.innerHTML=`<span class="stx">New: <b>sign in to sync your saved selections across devices</b> &mdash; optional, anytime.</span>`+
+      `<button class="stgo" id="stGo">Set up</button><button class="stx-close" id="stX" aria-label="Dismiss">&#10005;</button>`;
+    const done=()=>{ try{localStorage.setItem("mercs.v1.synctip","1");}catch(e){} if(bar.parentNode)bar.parentNode.removeChild(bar); };
+    document.body.appendChild(bar);
+    const g=$("#stGo",bar); if(g)g.onclick=()=>{ done(); openAccount(); };
+    const x=$("#stX",bar);  if(x)x.onclick=done;
+  }, 1600);
+}
+
 function boot(){
+  restoreSession();
   // build tab bar
   $("#tabbar").innerHTML=TABS.map(t=>`<button class="tab" data-tab="${t.id}"><span class="tico">${t.ico}</span><span class="tlbl">${esc(t.t)}</span></button>`).join("");
   $$("#tabbar .tab").forEach(b=>b.onclick=()=>navTo(b.dataset.tab));
@@ -1539,5 +1623,6 @@ function boot(){
   registerSW();
   initOffline();
   initLaunchSplash();
+  initSyncTip();
 }
 boot();

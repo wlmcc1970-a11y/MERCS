@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
 <meta name="theme-color" content="#174541">
 <meta name="description" content="The official MERCS 2.5 field companion by DigiRune Studios.">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -97,6 +98,22 @@ header.bar{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:
   text-transform:uppercase;min-height:38px;display:flex;align-items:center;gap:.3rem;white-space:nowrap}
 .acctbtn:active{background:rgba(0,0,0,.3)}
 .acctbtn.in{background:var(--orange);color:#14201e;border-color:var(--orange-d)}
+/* --- official sign-in buttons (Google brand: white / colored G; Apple HIG: black) --- */
+.signin-official{display:flex;flex-direction:column;gap:.55rem;margin:.7rem 0 .3rem}
+.gsi-btn,.asi-btn{display:flex;align-items:center;justify-content:center;gap:12px;width:100%;min-height:46px;padding:0 16px;border-radius:8px;font-size:15px;font-weight:600;line-height:1;cursor:pointer;-webkit-tap-highlight-color:transparent;box-sizing:border-box}
+.gsi-btn{background:#fff;color:#1f1f1f;border:1px solid #747775;font-family:'Roboto',var(--font-body,'Barlow'),system-ui,-apple-system,sans-serif}
+.gsi-btn:active{background:#f2f2f2}
+.asi-btn{background:#000;color:#fff;border:1px solid #000;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text',var(--font-body,'Barlow'),system-ui,sans-serif}
+.asi-btn:active{background:#161616}
+.gsi-btn svg,.asi-btn svg{flex:none;display:block}
+.asi-btn svg{margin-top:-2px}
+.btn.danger{background:#7a1f1f;color:#fff;border-color:#9b2b2b}
+.btn.danger:active{background:#611818}
+/* --- first-run sync tip (once-only, dismissible) --- */
+#syncTip{position:fixed;left:50%;transform:translateX(-50%);top:calc(env(safe-area-inset-top,0px) + 10px);z-index:1200;max-width:94%;width:444px;display:flex;align-items:center;gap:.5rem;background:var(--panel,#1b2a27);border:1px solid var(--orange,#d99a2b);border-radius:11px;padding:.6rem .7rem;box-shadow:0 10px 30px rgba(0,0,0,.42)}
+#syncTip .stx{flex:1;font-size:.8rem;line-height:1.35;color:var(--ink,#eaf2ef)}
+#syncTip .stgo{flex:none;min-height:40px;padding:.4rem .8rem;font-weight:700;font-size:.78rem;color:#14201e;background:var(--orange,#d99a2b);border:none;border-radius:8px;cursor:pointer}
+#syncTip .stx-close{flex:none;min-width:40px;min-height:40px;background:transparent;border:none;color:var(--ink2,#9fb3ad);font-size:1.05rem;cursor:pointer;line-height:1}
 /* ---- home / splash ---- */
 .splash{background:linear-gradient(180deg,#174541 0%,#20574f 55%,#2c6a61 100%);
   border-bottom:3px solid var(--ink);padding:1.7rem 1.1rem 1.6rem;text-align:center;position:relative;overflow:hidden}
@@ -689,5 +706,6 @@ header.bar{border-bottom:3px solid var(--cyan)}
 
 <script src="data.js"></script>
 <script src="app.js"></script>
+<script src="auth.js"></script>
 </body>
 </html>

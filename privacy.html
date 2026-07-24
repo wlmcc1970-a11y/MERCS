@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Privacy Policy &amp; Account Deletion — MERCS Companion</title>
+<meta name="description" content="Privacy policy and account &amp; data deletion instructions for the official MERCS Companion app by DigiRune Studios.">
+<meta name="robots" content="index,follow">
+<style>
+  :root{
+    --teal:#174541; --teal-d:#0f302d; --cyan:#1fa9be; --ink:#14201e; --ink2:#3d4f4b;
+    --paper:#f6f8f7; --card:#ffffff; --line:#dde5e2; --danger:#7a1f1f;
+  }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{margin:0;background:var(--paper);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;line-height:1.6}
+  header{background:linear-gradient(135deg,var(--teal),var(--teal-d));color:#eef6f4;
+    padding:calc(env(safe-area-inset-top,0px) + 28px) 20px 24px}
+  .wrap{max-width:760px;margin:0 auto;padding:0 20px}
+  header .wrap{padding:0}
+  .brand{font-size:.8rem;letter-spacing:.18em;text-transform:uppercase;color:var(--cyan);font-weight:700;margin:0 0 .35rem}
+  h1{margin:.1rem 0 .3rem;font-size:1.55rem;line-height:1.2}
+  header .meta{font-size:.85rem;color:#bcd6d1;margin:.2rem 0 0}
+  main{padding:26px 0 60px}
+  h2{font-size:1.15rem;margin:1.9rem 0 .5rem;color:var(--teal);border-bottom:2px solid var(--line);padding-bottom:.3rem}
+  h3{font-size:1rem;margin:1.1rem 0 .3rem}
+  p,li{color:var(--ink2)}
+  a{color:#12726a;font-weight:600}
+  ul{padding-left:1.2rem}
+  li{margin:.25rem 0}
+  .tldr{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--cyan);
+    border-radius:10px;padding:14px 18px;margin:18px 0}
+  .tldr strong{color:var(--ink)}
+  .delete{background:#fff;border:1px solid var(--line);border-left:4px solid var(--danger);
+    border-radius:10px;padding:16px 18px;margin:14px 0}
+  .steps{counter-reset:s;list-style:none;padding-left:0}
+  .steps li{position:relative;padding-left:2.1rem;margin:.5rem 0}
+  .steps li::before{counter-increment:s;content:counter(s);position:absolute;left:0;top:0;
+    width:1.5rem;height:1.5rem;border-radius:50%;background:var(--teal);color:#fff;
+    font-size:.8rem;font-weight:700;display:flex;align-items:center;justify-content:center}
+  code{background:#eef2f1;padding:1px 6px;border-radius:4px;font-size:.9em}
+  footer{border-top:1px solid var(--line);margin-top:30px;padding:22px 0 40px;color:#6b7a76;font-size:.85rem}
+  footer .wrap{color:#6b7a76}
+  .muted{color:#6b7a76;font-size:.9rem}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <p class="brand">DigiRune Studios</p>
+    <h1>MERCS Companion — Privacy Policy</h1>
+    <p class="meta">Effective July 23, 2026 &nbsp;·&nbsp; Last updated July 23, 2026</p>
+  </div>
+</header>
+
+<main>
+<div class="wrap">
+
+  <div class="tldr">
+    <strong>The short version.</strong> The MERCS Companion works fully offline and shows no ads.
+    It collects nothing about you unless you choose to sign in. Signing in with Google or Apple is
+    optional and exists for one reason: to sync your saved selections across your devices. We never
+    sell your data or use it for advertising, and you can delete your account and all of its data at
+    any time — see <a href="#delete">Delete your account &amp; data</a>.
+  </div>
+
+  <h2>Who we are</h2>
+  <p>The MERCS Companion is the official companion app for the MERCS tabletop game, developed and
+  operated by <strong>DigiRune Studios</strong> (sole proprietor, Will McCullough). MERCS and all
+  related content are trademarks of Fifth Angel Studios and used under license. This policy explains
+  what the app does and does not do with your information. Questions? Email
+  <a href="mailto:will@digirunestudios.com">will@digirunestudios.com</a>.</p>
+
+  <h2>What we collect</h2>
+  <h3>If you don't sign in</h3>
+  <p>Nothing. The app runs entirely on your device, works offline, and sends no personal data
+  anywhere. There are no ads, no analytics, no tracking, and no advertising SDKs. Any selections you
+  make (favorites, strike teams, tracker state) stay on your device — and only if you choose
+  &ldquo;save on this device.&rdquo;</p>
+
+  <h3>If you sign in with Google or Apple (optional)</h3>
+  <p>To sync your saves across devices, we create a private account for you and store:</p>
+  <ul>
+    <li>An account identifier (a Firebase user ID) and the <strong>name</strong> and
+      <strong>email address</strong> your chosen provider (Google or Apple) returns, plus a profile
+      photo URL if one is provided;</li>
+    <li>Your <strong>in-app selections</strong> — favorites, strike teams, and round-tracker state.
+      These are stored as a single data record tied to your account.</li>
+  </ul>
+  <p>Sign-in and sync are provided by <strong>Google Firebase</strong> (Firebase Authentication and
+  Cloud Firestore). We do not collect your password — authentication is handled entirely by Google or
+  Apple. If you use <em>Sign in with Apple</em>, you may choose Apple's &ldquo;Hide My Email&rdquo;
+  option, in which case we only ever see a private relay address.</p>
+
+  <h2>How we use your information</h2>
+  <p>We use it for one purpose only: to sign you in and keep your saved selections in sync across the
+  devices where you sign in. We do <strong>not</strong> use it for advertising or profiling, we do
+  <strong>not</strong> sell or rent it, and we do <strong>not</strong> share it with anyone except the
+  service providers below who make sync work.</p>
+
+  <h2>Service providers</h2>
+  <ul>
+    <li><strong>Google Firebase</strong> — Authentication and Cloud Firestore host your account and
+      synced data. See Google's
+      <a href="https://firebase.google.com/support/privacy" target="_blank" rel="noopener">Firebase Privacy</a>
+      and <a href="https://policies.google.com/privacy" target="_blank" rel="noopener">Google Privacy Policy</a>.</li>
+    <li><strong>Sign in with Google / Sign in with Apple</strong> — identity providers used only when
+      you tap their button.</li>
+    <li><strong>Google Fonts</strong> — the app's typefaces are served by Google Fonts, which may
+      receive your device's IP address as part of delivering the fonts. No fonts-related cookies are set.</li>
+  </ul>
+  <p>We use no other third-party services, analytics, or advertising networks.</p>
+
+  <h2>Data retention</h2>
+  <p>Your account and synced data are kept until you delete them. When you delete your account (below),
+  the associated records are removed. On-device data is removed when you uninstall the app or choose
+  &ldquo;Stop saving on this device.&rdquo;</p>
+
+  <h2 id="delete">Delete your account &amp; data</h2>
+  <div class="delete">
+    <p>You can permanently delete your account and all of its synced data at any time. There are two ways:</p>
+    <h3 style="margin-top:.4rem">In the app (fastest)</h3>
+    <ol class="steps">
+      <li>Open the MERCS Companion and tap <strong>Sign In</strong> (in the header, or inside the
+        <strong>&#9776; menu</strong> on phones).</li>
+      <li>Tap <strong>Delete account &amp; data</strong>.</li>
+      <li>Confirm. Your synced data record and your sign-in account are deleted immediately; your other
+        devices clear their copy on their next sync.</li>
+    </ol>
+    <h3>By email</h3>
+    <p>Prefer to ask us? Email <a href="mailto:will@digirunestudios.com?subject=MERCS%20account%20deletion">will@digirunestudios.com</a>
+      from the address you signed in with and request deletion. We will delete your account and data
+      within 30 days and confirm when it's done.</p>
+    <p class="muted">What gets deleted: your account identifier, the name/email/photo held by Firebase
+      Authentication, and your synced selections in Firestore. This cannot be undone.</p>
+  </div>
+
+  <h2>Security</h2>
+  <p>All data is transmitted over encrypted HTTPS connections. Access to your synced data is restricted
+  by Firestore security rules so that only your own signed-in account can read or write it.</p>
+
+  <h2>Children's privacy</h2>
+  <p>The app is not directed to children under 13, and we do not knowingly collect personal information
+  from them. If you believe a child has provided us information, contact us and we will delete it.</p>
+
+  <h2>Your choices</h2>
+  <p>Signing in is entirely optional — you can use every feature of the app without an account, or with
+  a device-only save. If you have signed in, you can sign out, switch to a device-only save, or delete
+  your account and data at any time as described above.</p>
+
+  <h2>Changes to this policy</h2>
+  <p>If we change this policy we will post the updated version here and revise the &ldquo;Last
+  updated&rdquo; date above. Material changes will be reflected in the app.</p>
+
+  <h2>Contact</h2>
+  <p>DigiRune Studios · <a href="mailto:will@digirunestudios.com">will@digirunestudios.com</a><br>
+  <a href="https://digirunestudios.com" target="_blank" rel="noopener">digirunestudios.com</a></p>
+
+</div>
+</main>
+
+<footer>
+  <div class="wrap">
+    MERCS™ © Fifth Angel Studios — used under license. Official companion app by DigiRune Studios.
+  </div>
+</footer>
+</body>
+</html>
