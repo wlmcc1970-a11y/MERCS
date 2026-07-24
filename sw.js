@@ -1,5 +1,5 @@
 /* MERCS Companion — service worker. DigiRune Studios. */
-const CACHE="mercs-v19";
+const CACHE="mercs-v20";
 const SHELL=[
   "./","index.html","manifest.json","data.js","app.js","auth.js","privacy.html",
   "assets/logo_white.png","assets/logo_black.png","assets/cover.png","assets/opscover.png",
@@ -301,7 +301,9 @@ const IMG_ASSETS=[
 ];
 
 self.addEventListener("install",e=>{
-  self.skipWaiting();
+  // NOTE: no skipWaiting() here on purpose — the new worker WAITS so the in-app
+  // "New version available - tap to update" toast (which posts SKIP_WAITING) is what
+  // activates it. Auto-skipping made the toast a dead button and could reload mid-action.
   // Critical: app shell must cache. Do NOT block install on the 28 MB of card images.
   e.waitUntil(caches.open(CACHE).then(c=>Promise.allSettled(SHELL.map(u=>c.add(u)))));
 });

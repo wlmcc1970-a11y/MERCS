@@ -40,6 +40,7 @@
      WKScriptMessageHandlers. On web + Android Chrome we use signInWithPopup. */
   var UA = navigator.userAgent || "";
   var IN_WRAPPER = /PWAShell|MERCSApp/.test(UA);
+  var USE_REDIRECT = /Android|iPhone|iPad|iPod|Mobi/i.test(UA);  // mobile web: redirect is more reliable than a popup
   function nativeHandler(name){
     try { return !!(window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers[name]); }
     catch(e){ return false; }
@@ -99,7 +100,8 @@
     var appleProvider  = new authMod.OAuthProvider('apple.com');
     appleProvider.addScope('email'); appleProvider.addScope('name');
 
-    var currentUser=null, unsub=null, pushTimer=null;
+    var currentUser=null, unsub=null, pushTimer=null, firstAuthCb=true;
+    authMod.getRedirectResult(auth).catch(function(){});   // finalize a mobile redirect sign-in
 
     function docRef(uid){ return fsMod.doc(db,'users',uid); }
     function setStatus(t){ api.statusText=t; var e=document.getElementById('acSync'); if(e)e.textContent=t; }
@@ -114,12 +116,20 @@
     api.signInGoogle = function(){
       setStatus('Opening Google sign-in...');
       if(IN_WRAPPER && nativeHandler('startGoogleSignIn')){ postNative('startGoogleSignIn'); return; }
-      authMod.signInWithPopup(auth, googleProvider).catch(function(){ setStatus('Sign-in did not complete - tap to try again'); toast('Sign-in did not complete'); });
+      if(USE_REDIRECT){ authMod.signInWithRedirect(auth, googleProvider); return; }
+      authMod.signInWithPopup(auth, googleProvider).catch(function(e){
+        if(e && (e.code==='auth/popup-blocked' || e.code==='auth/operation-not-supported-in-this-environment')){ authMod.signInWithRedirect(auth, googleProvider); return; }
+        setStatus('Sign-in did not complete - tap to try again'); toast('Sign-in did not complete');
+      });
     };
     api.signInApple = function(){
       setStatus('Opening Apple sign-in...');
       if(IN_WRAPPER && nativeHandler('startAppleSignIn')){ postNative('startAppleSignIn'); return; }
-      authMod.signInWithPopup(auth, appleProvider).catch(function(){ setStatus('Sign-in did not complete - tap to try again'); toast('Sign-in did not complete'); });
+      if(USE_REDIRECT){ authMod.signInWithRedirect(auth, appleProvider); return; }
+      authMod.signInWithPopup(auth, appleProvider).catch(function(e){
+        if(e && (e.code==='auth/popup-blocked' || e.code==='auth/operation-not-supported-in-this-environment')){ authMod.signInWithRedirect(auth, appleProvider); return; }
+        setStatus('Sign-in did not complete - tap to try again'); toast('Sign-in did not complete');
+      });
     };
 
     /* ── native shell hands provider credentials back (no WebView popup) ───── */
@@ -169,6 +179,8 @@
         try{ localStorage.setItem(SAVE_MODE,'cloud'); }catch(e){}
         try{ updateAccountUI(); }catch(e){}
         setStatus('Synced as ' + (user.email || user.displayName || 'your account'));
+        try{ var _pm=document.getElementById('pop'); if(_pm && _pm.classList.contains('open') && typeof popClose==='function') popClose(); }catch(e){}
+        if(!firstAuthCb){ try{ toast('Signed in as ' + String(user.displayName||user.email||'your account').split(' ')[0]); }catch(e){} }
 
         fsMod.getDoc(docRef(user.uid)).then(function(snap){
           var data = snap.exists() ? snap.data() : null;
@@ -202,6 +214,7 @@
         }
         setStatus('Cloud sync (off)');
       }
+      firstAuthCb = false;
     });
 
   }).catch(function(){
