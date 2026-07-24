@@ -1470,21 +1470,41 @@ function initOffline(){
 }
 
 function registerSW(){
+  /* One-time confirmation shown after an automatic update reload. */
+  try{ if(sessionStorage.getItem("mercs.v1.updated")==="1"){ sessionStorage.removeItem("mercs.v1.updated"); toast("Updated to the latest version"); } }catch(e){}
   if(!("serviceWorker" in navigator))return;
+  if(/PWAShell|MERCSApp/.test(navigator.userAgent||"")) return; /* wrapped store build updates ship through the store */
   navigator.serviceWorker.register("sw.js").then(reg=>{
+    if(reg.waiting&&navigator.serviceWorker.controller) autoApplyUpdate(reg.waiting); /* a worker left waiting from a prior visit */
     reg.addEventListener("updatefound",()=>{
       const nw=reg.installing;if(!nw)return;
       nw.addEventListener("statechange",()=>{
-        if(nw.state==="installed"&&navigator.serviceWorker.controller){showUpdateToast();}
+        /* installed + an existing controller => this is an UPDATE (not a first install): apply it automatically, no tap needed */
+        if(nw.state==="installed"&&navigator.serviceWorker.controller) autoApplyUpdate(nw);
       });
     });
   }).catch(()=>{});
   let reloaded=false;
-  navigator.serviceWorker.addEventListener("controllerchange",()=>{if(reloaded)return;reloaded=true;location.reload();});
+  navigator.serviceWorker.addEventListener("controllerchange",()=>{
+    if(reloaded)return;reloaded=true;
+    try{sessionStorage.setItem("mercs.v1.updated","1");}catch(e){}
+    reloadWhenSafe();
+  });
 }
-function showUpdateToast(){
-  const t=$("#updateBar");t.classList.add("show");
-  t.onclick=()=>{navigator.serviceWorker.getRegistration().then(reg=>{if(reg&&reg.waiting)reg.waiting.postMessage("SKIP_WAITING");});};
+function autoApplyUpdate(worker){ try{ worker.postMessage("SKIP_WAITING"); }catch(e){} }
+function reloadWhenSafe(){
+  const safe=()=>{
+    try{
+      const ae=document.activeElement;
+      if(ae&&(ae.tagName==="INPUT"||ae.tagName==="TEXTAREA"||ae.isContentEditable)) return false; /* don't wipe a half-typed search */
+      const pop=document.getElementById("pop");
+      if(pop&&pop.classList.contains("open")) return false; /* don't slam an open card/modal shut */
+    }catch(e){}
+    return true;
+  };
+  if(safe()) return location.reload();
+  const iv=setInterval(()=>{ if(safe()){ clearInterval(iv); location.reload(); } },1500);
+  document.addEventListener("visibilitychange",function h(){ if(document.visibilityState==="visible"&&safe()){ clearInterval(iv); document.removeEventListener("visibilitychange",h); location.reload(); } });
 }
 
 /* ============================================================
