@@ -1348,12 +1348,16 @@ window.closeNav=closeNav;
 (function(){
   let sx=0,sy=0,st=0,active=false,swiped=false;
   const overlayOpen=()=>$("#tools").classList.contains("open")||$("#pop").classList.contains("open")||$("#search").classList.contains("open")||($("#navMenu")&&$("#navMenu").classList.contains("open"));
-  const IGN=el=>{ if(!el)return false; return !!el.closest("input,textarea,select,.wtable,.dtable,table,.tblwrap,.cardimgs,.lb,.pop,.tools,.search,#navMenu"); };
+  // hard-block swipe-nav only over real controls & overlays; tables/carousels are handled boundary-aware below
+  const HARD=el=>{ if(!el)return false; return !!el.closest("input,textarea,select,.lb,.pop,.tools,.search,#navMenu"); };
+  // nearest ancestor that can actually scroll horizontally (Modifiers tables, card-image rows, etc.)
+  const hScroll=el=>{ while(el&&el.nodeType===1&&el!==document.body){ if(el.scrollWidth-el.clientWidth>4){const ox=getComputedStyle(el).overflowX; if(ox==="auto"||ox==="scroll")return el;} el=el.parentElement;} return null; };
+  let sel=null;
   document.addEventListener("touchstart",e=>{
     swiped=false;
     if(overlayOpen()){active=false;return;}
-    if(e.touches.length!==1||IGN(e.target)){active=false;return;}
-    const t=e.touches[0];sx=t.clientX;sy=t.clientY;st=Date.now();active=true;
+    if(e.touches.length!==1||HARD(e.target)){active=false;return;}
+    const t=e.touches[0];sx=t.clientX;sy=t.clientY;st=Date.now();sel=e.target;active=true;
   },{passive:true});
   document.addEventListener("touchend",e=>{
     if(!active)return;active=false;const t=e.changedTouches[0];
@@ -1362,6 +1366,11 @@ window.closeNav=closeNav;
     if(dt>700)return;
     if(Math.abs(dx)<42)return;
     if(Math.abs(dx)<Math.abs(dy)*1.4)return;   // must be dominantly horizontal (not a scroll/diagonal)
+    // let a horizontally-scrollable element (e.g. Modifiers tables) consume the swipe until it reaches its edge
+    const sc=hScroll(sel);
+    if(sc){const max=sc.scrollWidth-sc.clientWidth;
+      if(dx<0&&sc.scrollLeft<max-1)return;   // room to scroll right -> scroll, don't switch tab
+      if(dx>0&&sc.scrollLeft>1)return;}      // room to scroll left  -> scroll, don't switch tab
     const cur=TAB_IDS.indexOf(CURRENT_TAB);if(cur<0)return;
     let ni=cur+(dx<0?1:-1);
     if(ni<0||ni>=TAB_IDS.length)return;
