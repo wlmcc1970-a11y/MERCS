@@ -93,11 +93,16 @@ header.bar{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:
 .backbtn{display:none;align-items:center;gap:.3rem;border:1px solid rgba(255,255,255,.35);background:rgba(0,0,0,.14);
   color:#fff;border-radius:9px;padding:.4rem .7rem;font-weight:700;font-size:.8rem;min-height:38px;font-family:var(--font-disp);letter-spacing:.06em}
 .backbtn:active{background:rgba(0,0,0,.28)}
-.acctbtn{border:1px solid rgba(255,255,255,.4);background:rgba(0,0,0,.16);color:#eef6f4;border-radius:9px;
-  padding:.4rem .65rem;font-family:var(--font-disp);font-weight:600;letter-spacing:.06em;font-size:.7rem;
-  text-transform:uppercase;min-height:38px;display:flex;align-items:center;gap:.3rem;white-space:nowrap}
-.acctbtn:active{background:rgba(0,0,0,.3)}
-.acctbtn.in{background:var(--orange);color:#14201e;border-color:var(--orange-d)}
+.acctbtn{border:1px solid rgba(255,255,255,.24);background:rgba(0,0,0,.14);color:#eef6f4;border-radius:9px;
+  padding:.4rem .62rem;font-family:var(--font-body,inherit);font-weight:600;letter-spacing:.01em;font-size:.74rem;
+  min-height:38px;display:flex;align-items:center;gap:.42rem;white-space:nowrap}
+.acctbtn:active{background:rgba(0,0,0,.26)}
+/* status dot conveys state quietly: muted-red = signed out, amber = on-device only, green = synced */
+.acctbtn .sdot{width:8px;height:8px;border-radius:50%;flex:none;background:#cf7b74;box-shadow:0 0 0 3px rgba(207,123,116,.16)}
+.acctbtn.dev .sdot{background:#d9b24a;box-shadow:0 0 0 3px rgba(217,178,74,.16)}
+.acctbtn.in .sdot{background:#57b97d;box-shadow:0 0 0 3px rgba(87,185,125,.18)}
+.acctbtn.in,.acctbtn.dev{background:rgba(0,0,0,.14);color:#eef6f4;border-color:rgba(255,255,255,.24)}
+.acctbtn .albl{text-transform:none}
 /* --- official sign-in buttons (Google brand: white / colored G; Apple HIG: black) --- */
 .signin-official{display:flex;flex-direction:column;gap:.55rem;margin:.7rem 0 .3rem}
 .gsi-btn,.asi-btn{display:flex;align-items:center;justify-content:center;gap:12px;width:100%;min-height:46px;padding:0 16px;border-radius:8px;font-size:15px;font-weight:600;line-height:1;cursor:pointer;-webkit-tap-highlight-color:transparent;box-sizing:border-box}
@@ -110,10 +115,12 @@ header.bar{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:
 .btn.danger{background:#7a1f1f;color:#fff;border-color:#9b2b2b}
 .btn.danger:active{background:#611818}
 /* --- first-run sync tip (once-only, dismissible) --- */
-#syncTip{position:fixed;left:50%;transform:translateX(-50%);top:calc(env(safe-area-inset-top,0px) + 10px);z-index:1200;max-width:94%;width:444px;display:flex;align-items:center;gap:.5rem;background:var(--panel,#1b2a27);border:1px solid var(--orange,#d99a2b);border-radius:11px;padding:.6rem .7rem;box-shadow:0 10px 30px rgba(0,0,0,.42)}
-#syncTip .stx{flex:1;font-size:.8rem;line-height:1.35;color:var(--ink,#eaf2ef)}
-#syncTip .stgo{flex:none;min-height:40px;padding:.4rem .8rem;font-weight:700;font-size:.78rem;color:#14201e;background:var(--orange,#d99a2b);border:none;border-radius:8px;cursor:pointer}
-#syncTip .stx-close{flex:none;min-width:40px;min-height:40px;background:transparent;border:none;color:var(--ink2,#9fb3ad);font-size:1.05rem;cursor:pointer;line-height:1}
+#syncTip{position:fixed;left:50%;transform:translateX(-50%);top:calc(env(safe-area-inset-top,0px) + 10px);z-index:1200;max-width:94%;width:430px;display:flex;align-items:center;gap:.55rem;background:rgba(18,30,28,.96);border:1px solid rgba(31,169,190,.45);border-radius:12px;padding:.58rem .7rem;box-shadow:0 10px 30px rgba(0,0,0,.4);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
+#syncTip .stx{flex:1;font-size:.77rem;line-height:1.4;color:#d7e6e2}
+#syncTip .stx b{color:#eaf6f3;font-weight:700}
+#syncTip .stgo{flex:none;min-height:36px;padding:.36rem .72rem;font-weight:700;font-size:.75rem;color:#eafcff;background:transparent;border:1px solid rgba(31,169,190,.65);border-radius:8px;cursor:pointer}
+#syncTip .stgo:active{background:rgba(31,169,190,.14)}
+#syncTip .stx-close{flex:none;min-width:34px;min-height:34px;background:transparent;border:none;color:#8aa39d;font-size:1rem;cursor:pointer;line-height:1}
 /* ---- home / splash ---- */
 .splash{background:linear-gradient(180deg,#174541 0%,#20574f 55%,#2c6a61 100%);
   border-bottom:3px solid var(--ink);padding:1.7rem 1.1rem 1.6rem;text-align:center;position:relative;overflow:hidden}
@@ -645,7 +652,7 @@ header.bar{border-bottom:3px solid var(--cyan)}
       <button class="iconbtn" id="xlateBtn" title="Translate" aria-label="Translate"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.5 2.5 15.5 0 18M12 3c-2.5 2.5-2.5 15.5 0 18"/></svg></button>
       <button class="iconbtn themebtn" id="themeBtn" title="Low-light mode" aria-label="Toggle low-light mode"><svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.5 1.5M17.5 17.5L19 19M19 5l-1.5 1.5M6.5 17.5L5 19"/></svg><svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg></button>
       <button class="iconbtn" id="toolsBtn" title="Field Tools" aria-label="Field Tools"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M14.7 6.3a4 4 0 0 1-5.4 5.4L4 17v3h3l5.3-5.3a4 4 0 0 1 5.4-5.4l-2.3 2.3-1.4-1.4z"/></svg></button>
-      <button class="acctbtn" id="acctBtn">Sign In</button>
+      <button class="acctbtn" id="acctBtn" aria-label="Sign in to sync"><span class="sdot" aria-hidden="true"></span><span class="albl">Sign in</span></button>
     </div>
   </header>
 

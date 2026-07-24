@@ -108,9 +108,12 @@ function signOut(){
 function updateAccountUI(){
   const b=$("#acctBtn");
   if(b){
-    if(ACCOUNT&&ACCOUNT.mode==='cloud'){ b.innerHTML="&#9670; "+esc(String(ACCOUNT.name||ACCOUNT.email||"Account").split(" ")[0]); b.classList.add("in"); }
-    else if(ACCOUNT&&ACCOUNT.mode==='device'){ b.innerHTML="&#9670; Saved"; b.classList.add("in"); }
-    else { b.innerHTML="Sign In"; b.classList.remove("in"); }
+    b.classList.remove("in","dev");
+    let lbl="Sign in", aria="Sign in to sync";
+    if(ACCOUNT&&ACCOUNT.mode==='cloud'){ lbl=esc(String(ACCOUNT.name||ACCOUNT.email||"Account").split(" ")[0]); b.classList.add("in"); aria="Signed in as "+lbl; }
+    else if(ACCOUNT&&ACCOUNT.mode==='device'){ lbl="Saved"; b.classList.add("dev"); aria="Saved on this device"; }
+    b.innerHTML='<span class="sdot" aria-hidden="true"></span><span class="albl">'+lbl+'</span>';
+    b.setAttribute("aria-label",aria);
   }
   const nl=document.querySelector('#navActs [data-act="account"] span:last-child');
   if(nl){ nl.textContent = (ACCOUNT&&ACCOUNT.mode==='cloud') ? String(ACCOUNT.name||"Account").split(" ")[0] : (ACCOUNT&&ACCOUNT.mode==='device') ? "Saved on device" : "Sign In"; }
@@ -1566,8 +1569,8 @@ function initSyncTip(){
     try{ if(localStorage.getItem("mercs.v1.synctip")) return; }catch(e){}
     if(ACCOUNT || document.getElementById("syncTip")) return;
     const bar=document.createElement("div"); bar.id="syncTip";
-    bar.innerHTML=`<span class="stx">New: <b>sign in to sync your saved selections across devices</b> &mdash; optional, anytime.</span>`+
-      `<button class="stgo" id="stGo">Set up</button><button class="stx-close" id="stX" aria-label="Dismiss">&#10005;</button>`;
+    bar.innerHTML=`<span class="stx"><b>Sync across your devices</b> &mdash; sign in to keep your favorites, teams &amp; trackers on every device. Optional, anytime.</span>`+
+      `<button class="stgo" id="stGo">Sign in</button><button class="stx-close" id="stX" aria-label="Dismiss">&#10005;</button>`;
     const done=()=>{ try{localStorage.setItem("mercs.v1.synctip","1");}catch(e){} if(bar.parentNode)bar.parentNode.removeChild(bar); };
     document.body.appendChild(bar);
     const g=$("#stGo",bar); if(g)g.onclick=()=>{ done(); openAccount(); };
