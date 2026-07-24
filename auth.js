@@ -26,7 +26,7 @@
      buttons explain that sync isn't configured yet. */
   var cfg = {
     apiKey:            "AIzaSyBcW-XiybutnZOuLZGmPM8qyLRh56Jc1rY",
-    authDomain:        "mercs-companion.firebaseapp.com",
+    authDomain:        "login.digirunestudios.com",
     projectId:         "mercs-companion",
     storageBucket:     "mercs-companion.firebasestorage.app",
     messagingSenderId: "14229288118",
