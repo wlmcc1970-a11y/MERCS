@@ -1,0 +1,13 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.digirunestudios.mercs",
+      "sha256_cert_fingerprints": [
+        "DC:59:6C:0C:53:C8:52:C4:C2:C0:94:E5:67:C2:F7:59:F0:58:7A:2F:18:05:0D:C6:E2:D9:CE:26:AD:C0:89:9C",
+        "A4:E5:A1:83:29:10:BE:89:16:D6:3D:39:6F:E6:C2:DA:79:93:B3:76:D8:2E:ED:82:00:9E:8B:AD:6E:88:C6:1E"
+      ]
+    }
+  }
+]
