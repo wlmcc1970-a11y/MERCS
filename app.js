@@ -1237,11 +1237,15 @@ function runSearch(q){q=q.trim();const out=$("#searchResults");
 }
 
 /* ============================================================
-   UNIVERSAL: TRANSLATE — in-page Google Translate Element
-   The globe opens a language picker; choosing a language translates the
-   live DOM in place (no reload). The widget script is lazy-loaded on first
-   use so offline-first load is never impacted. Protected game terms carry
-   translate="no", so core MERCS terms stay in English.
+   UNIVERSAL: TRANSLATE — native-first, three honest paths
+   1) Chrome/Edge (incl. the wrapped Android app): the browser's BUILT-IN
+      on-device Translator API. Translates in place, no server, and once a
+      language pack is downloaded it keeps working with no connection.
+   2) The wrapped iOS app: hands the page to Safari, whose own on-device
+      translation takes over (Apple exposes no translate API to web content).
+   3) Anything else: the legacy Google website-translator widget, but now
+      with a progress bar and an honest failure message instead of silence.
+   Protected game terms carry translate="no" and are never sent or altered.
    ============================================================ */
 const LANGS=[
  ["af","Afrikaans"],["sq","Albanian"],["ar","Arabic"],["hy","Armenian"],["az","Azerbaijani"],
@@ -1257,58 +1261,214 @@ const LANGS=[
  ["es","Spanish"],["sw","Swahili"],["sv","Swedish"],["ta","Tamil"],["te","Telugu"],
  ["th","Thai"],["tr","Turkish"],["uk","Ukrainian"],["ur","Urdu"],["vi","Vietnamese"],["cy","Welsh"]
 ];
-/* Google Translate Element: lazy-load the widget once, on first globe use. */
-let _gteState="idle"; // idle | loading | ready | failed
+function xlName(code){const h=LANGS.find(l=>l[0]===code);return h?h[1]:code;}
+
+/* ---------- platform ---------- */
+const XL_IOS_WRAP=/PWAShell|MERCSApp/.test(navigator.userAgent||"");
+function xlHasNative(){try{return typeof Translator!=="undefined"&&typeof Translator.create==="function";}catch(e){return false;}}
+
+/* ---------- state ---------- */
+const XL={lang:"",busy:false,tr:null,trLang:"",obs:null,touched:[],cache:null,pend:null};
+const XL_LANGKEY="mercs.v1.xlang";
+const XL_CACHEKEY="mercs.v1.xlcache";
+
+function xlCache(){if(XL.cache)return XL.cache;
+  try{XL.cache=JSON.parse(localStorage.getItem(XL_CACHEKEY)||"{}");}catch(e){XL.cache={};}
+  if(!XL.cache||typeof XL.cache!=="object")XL.cache={};
+  return XL.cache;}
+function xlCacheSave(){try{const s=JSON.stringify(XL.cache||{});
+    if(s.length>700000){XL.cache={};return;}                 /* bounded: drop rather than grow forever */
+    localStorage.setItem(XL_CACHEKEY,s);}catch(e){}}
+
+/* ---------- progress bar (never itself translated) ---------- */
+function xlBar(msg,pct){
+  let b=document.getElementById("xlbar");
+  if(!b){b=document.createElement("div");b.id="xlbar";b.setAttribute("translate","no");
+    b.innerHTML='<span class="xlmsg"></span><span class="xlpct"></span><i class="xlfill"></i>';
+    document.body.appendChild(b);}
+  b.querySelector(".xlmsg").textContent=msg||"";
+  b.querySelector(".xlpct").textContent=(pct==null?"":pct+"%");
+  b.querySelector(".xlfill").style.width=(pct==null?0:Math.max(2,Math.min(100,pct)))+"%";
+  b.classList.add("show");
+}
+function xlBarHide(){const b=document.getElementById("xlbar");if(b)b.classList.remove("show");}
+
+/* ---------- which text nodes may be translated ---------- */
+const XL_SKIP='[translate="no"],.notranslate,#gte,#xlbar,#pop,script,style,noscript,svg,select,textarea,input,code,pre,.langlist';
+function xlNodes(root){
+  const out=[];
+  const w=document.createTreeWalker(root||document.body,NodeFilter.SHOW_TEXT,null);
+  let n;
+  while((n=w.nextNode())){
+    const v=n.nodeValue;if(!v)continue;
+    const t=v.trim();
+    if(t.length<2)continue;
+    if(!/[A-Za-z]{2}/.test(t))continue;                       /* numbers/glyphs alone: nothing to translate */
+    const p=n.parentElement;
+    if(!p||p.closest(XL_SKIP))continue;
+    out.push(n);
+  }
+  return out;
+}
+
+/* ---------- apply / revert ---------- */
+function xlSet(n,text){
+  const t=n.nodeValue.trim();
+  XL.touched.push([n,n.nodeValue]);
+  n.nodeValue=n.nodeValue.replace(t,text);
+}
+function xlRevert(){
+  for(let i=XL.touched.length-1;i>=0;i--){try{XL.touched[i][0].nodeValue=XL.touched[i][1];}catch(e){}}
+  XL.touched=[];
+}
+
+/* ---------- native (Chrome/Edge on-device) ---------- */
+async function xlNativeTranslate(code,nodes,quiet){
+  const cache=xlCache(),pfx=code+"";
+  const uniq=new Map();
+  nodes.forEach(n=>{const k=n.nodeValue.trim();if(!uniq.has(k))uniq.set(k,[]);uniq.get(k).push(n);});
+  const need=[];
+  uniq.forEach((_,k)=>{if(cache[pfx+k]==null)need.push(k);});
+  if(need.length){
+    if(!XL.tr||XL.trLang!==code){
+      if(!quiet)xlBar("Preparing "+xlName(code)+"…",null);
+      XL.tr=await Translator.create({sourceLanguage:"en",targetLanguage:code,
+        monitor(m){m.addEventListener("downloadprogress",e=>{
+          if(!quiet)xlBar("Downloading "+xlName(code)+" — one time only…",Math.round((e.loaded||0)*100));});}});
+      XL.trLang=code;
+    }
+    let done=0;const queue=need.slice();
+    const worker=async()=>{while(queue.length){const s=queue.shift();
+      try{cache[pfx+s]=await XL.tr.translate(s);}catch(e){cache[pfx+s]=s;}
+      done++;if(!quiet&&(done%4===0||done===need.length))xlBar("Translating…",Math.round(done/need.length*100));}};
+    await Promise.all(Array.from({length:Math.min(6,queue.length)},worker));
+    xlCacheSave();
+  }
+  uniq.forEach((list,k)=>{const out=cache[pfx+k];if(out==null||out===k)return;list.forEach(n=>xlSet(n,out));});
+}
+
+/* Re-translate anything the app renders later (panels, modals, search results). */
+function xlObserve(){
+  if(XL.obs||!("MutationObserver" in window))return;
+  XL.obs=new MutationObserver(muts=>{
+    if(!XL.lang||XL.busy)return;
+    let added=false;
+    for(const m of muts){if(m.addedNodes&&m.addedNodes.length){added=true;break;}}
+    if(!added)return;
+    clearTimeout(XL.pend);
+    XL.pend=setTimeout(async()=>{
+      if(!XL.lang||XL.busy)return;
+      const fresh=xlNodes(document.body).filter(n=>!XL.touched.some(p=>p[0]===n));
+      if(!fresh.length)return;
+      XL.busy=true;
+      try{await xlNativeTranslate(XL.lang,fresh,true);}catch(e){}
+      XL.busy=false;
+    },260);
+  });
+  XL.obs.observe(document.body,{childList:true,subtree:true});
+}
+function xlUnobserve(){if(XL.obs){XL.obs.disconnect();XL.obs=null;}clearTimeout(XL.pend);}
+
+/* ---------- legacy Google widget (fallback only) ---------- */
+let _gteState="idle";
 function _gteInject(){
   if(_gteState==="loading"||_gteState==="ready")return;
   _gteState="loading";
   window.googleTranslateElementInit=function(){
-    try{
-      new google.translate.TranslateElement({pageLanguage:"en",autoDisplay:false},"gte");
-      _gteState="ready";
-    }catch(e){_gteState="failed";}
+    try{new google.translate.TranslateElement({pageLanguage:"en",autoDisplay:false},"gte");_gteState="ready";}
+    catch(e){_gteState="failed";}
   };
   const sc=document.createElement("script");
   sc.src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit";
   sc.onerror=()=>{_gteState="failed";};
   document.head.appendChild(sc);
 }
-/* Poll for Google's hidden <select.goog-te-combo>, then set the language and
-   dispatch 'change' so the page translates in place. Reverting uses '' / 'en'. */
-function _gteApply(code){
-  const deadline=Date.now()+3500;
-  const tryApply=()=>{
-    const sel=document.querySelector(".goog-te-combo");
-    if(sel){
-      sel.value=code;
-      sel.dispatchEvent(new Event("change"));
-      return true;
-    }
-    return false;
-  };
-  if(tryApply())return;
-  const poll=setInterval(()=>{
-    if(_gteState==="failed"){clearInterval(poll);toast("Translation needs an internet connection.");return;}
-    if(tryApply()||Date.now()>deadline){
-      clearInterval(poll);
-      if(!document.querySelector(".goog-te-combo"))toast("Translation needs an internet connection.");
-    }
-  },120);
-}
-function setTranslate(code){
+function xlLegacy(code){
   _gteInject();
-  if(_gteState==="failed"){toast("Translation needs an internet connection.");return;}
-  _gteApply(code);
+  const probe=xlNodes(document.body)[0];
+  const before=probe?probe.nodeValue:"";
+  xlBar(code?"Translating…":"Restoring English…",null);
+  const deadline=Date.now()+30000;
+  let applied=false;
+  const poll=setInterval(()=>{
+    if(_gteState==="failed"){clearInterval(poll);xlBarHide();
+      toast("Translation is unavailable right now — please try again with a connection.");return;}
+    const sel=document.querySelector(".goog-te-combo");
+    if(sel&&!applied){sel.value=code;sel.dispatchEvent(new Event("change"));applied=true;}
+    const changed=probe&&probe.nodeValue!==before;
+    if(changed||(!code&&applied)){clearInterval(poll);xlBarHide();
+      toast(code?("Translated to "+xlName(code)):"Showing the original English");return;}
+    if(Date.now()>deadline){clearInterval(poll);xlBarHide();
+      toast("Translation is taking too long — please try again with a connection.");}
+  },400);
+}
+
+/* ---------- the one entry point ---------- */
+async function setTranslate(code){
   popClose();
+  if(XL.busy)return;
+  if(!xlHasNative()){xlLegacy(code);return;}
+  XL.busy=true;
+  try{
+    xlUnobserve();
+    xlRevert();                                   /* always start from the real English */
+    if(!code){XL.lang="";try{localStorage.removeItem(XL_LANGKEY);}catch(e){}
+      xlBarHide();toast("Showing the original English");return;}
+    xlBar("Preparing "+xlName(code)+"…",null);
+    await xlNativeTranslate(code,xlNodes(document.body),false);
+    XL.lang=code;
+    try{localStorage.setItem(XL_LANGKEY,code);}catch(e){}
+    xlBarHide();
+    toast("Translated to "+xlName(code)+" — game terms stay in English");
+    xlObserve();
+  }catch(e){
+    xlRevert();XL.lang="";xlBarHide();
+    toast("Couldn’t translate — a connection is needed the first time you use a language.");
+  }finally{XL.busy=false;}
 }
 window.setTranslate=setTranslate;
+
+/* Re-apply the chosen language on launch, but ONLY if its pack is already on the
+   device — never surprise anyone with a download or a wait at startup. */
+async function xlRestore(){
+  let saved="";try{saved=localStorage.getItem(XL_LANGKEY)||"";}catch(e){}
+  if(!saved||!xlHasNative()||XL_IOS_WRAP)return;
+  try{
+    const a=await Translator.availability({sourceLanguage:"en",targetLanguage:saved});
+    if(a!=="available")return;
+    XL.busy=true;
+    await xlNativeTranslate(saved,xlNodes(document.body),true);
+    XL.lang=saved;XL.busy=false;xlObserve();
+  }catch(e){XL.busy=false;}
+}
+
+/* ---------- picker ---------- */
+function xlSafariHandoff(){
+  try{if(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.openInSafari){
+    window.webkit.messageHandlers.openInSafari.postMessage(location.href);return;}}catch(e){}
+  window.open(location.href,"_blank","noopener");
+}
+window.xlSafariHandoff=xlSafariHandoff;
+
 function translatePicker(){
-  const opts=`<button class="langopt" data-lang="" translate="no">Show original (English)</button>`
-    +LANGS.map(([code,name])=>`<button class="langopt" data-lang="${esc(code)}" translate="no">${esc(name)}</button>`).join("");
-  popOpen(`<div translate="no"><h4>Translate</h4>
-    <p class="small muted" style="margin:.1rem 0 .6rem">Translates this page in place. Core game terms stay in English. Needs an internet connection.</p>
-    <div class="langlist" id="langList">${opts}</div></div>`);
-  $$("#langList .langopt").forEach(b=>b.onclick=()=>setTranslate(b.dataset.lang));
+  if(XL_IOS_WRAP){
+    popOpen('<div translate="no"><h4>Translate</h4>'
+      +'<p class="small muted" style="margin:.1rem 0 .8rem">This page opens in Safari, which translates it on your device. '
+      +'Tap <b>aA</b> in the Safari toolbar, choose <b>Translate</b>, then pick your language. Core game terms stay in English.</p>'
+      +'<button class="btn" style="width:100%" onclick="xlSafariHandoff();popClose()">Translate this page</button></div>');
+    return;
+  }
+  const native=xlHasNative();
+  const note=native
+    ? "Translates this page on your device. The first use of a language downloads it once; after that it works with no connection. Core game terms stay in English."
+    : "Translates this page. Core game terms stay in English. Needs an internet connection.";
+  const cur=XL.lang?('<p class="small" style="margin:.1rem 0 .5rem"><b translate="no">'+esc(xlName(XL.lang))+'</b> is active.</p>'):"";
+  const opts='<button class="langopt" data-lang="" translate="no">Show original (English)</button>'
+    +LANGS.map(function(l){return '<button class="langopt" data-lang="'+esc(l[0])+'" translate="no">'+esc(l[1])+'</button>';}).join("");
+  popOpen('<div translate="no"><h4>Translate</h4>'+cur
+    +'<p class="small muted" style="margin:.1rem 0 .6rem">'+note+'</p>'
+    +'<div class="langlist" id="langList">'+opts+'</div></div>');
+  $$("#langList .langopt").forEach(function(b){b.onclick=function(){setTranslate(b.dataset.lang);};});
 }
 window.translatePicker=translatePicker;
 
@@ -1647,5 +1807,6 @@ function boot(){
   initOffline();
   initLaunchSplash();
   initSyncTip();
+  xlRestore();            /* re-apply a previously chosen language if its pack is already on-device */
 }
 boot();

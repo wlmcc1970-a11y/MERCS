@@ -274,6 +274,18 @@ select{min-width:140px}
 
 .popcard .bw{display:inline-block;margin-top:.5rem;font-size:.78rem;padding:.2rem .55rem;border-radius:6px;font-weight:700;font-family:var(--font-disp);
   background:#eaf3ea;color:var(--good);border:1px solid var(--good)}
+/* ---- translate progress bar (never itself translated) ---- */
+#xlbar{position:fixed;left:50%;transform:translateX(-50%) translateY(8px);z-index:1300;
+  bottom:calc(1.2rem + var(--safe-b));min-width:min(92vw,360px);max-width:94vw;
+  display:flex;align-items:center;gap:.5rem;padding:.6rem .8rem;border-radius:12px;
+  background:rgba(18,30,28,.97);border:1px solid rgba(31,169,190,.45);color:#eaf5f3;
+  box-shadow:0 10px 30px rgba(0,0,0,.42);font-size:.86rem;opacity:0;pointer-events:none;
+  transition:opacity .18s ease,transform .18s ease;overflow:hidden}
+#xlbar.show{opacity:1;transform:translateX(-50%) translateY(0)}
+#xlbar .xlmsg{flex:1 1 auto}
+#xlbar .xlpct{flex:0 0 auto;font-variant-numeric:tabular-nums;opacity:.85}
+#xlbar .xlfill{position:absolute;left:0;bottom:0;height:3px;width:0;background:var(--teal,#1fa9be);
+  transition:width .25s ease}
 /* ---- translate language picker ---- */
 .langlist{display:grid;grid-template-columns:1fr 1fr;gap:.4rem;max-height:46vh;overflow-y:auto;
   -webkit-overflow-scrolling:touch;padding:.15rem;margin:.2rem -.15rem}

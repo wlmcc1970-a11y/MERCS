@@ -1,10 +1,10 @@
 /* MERCS Companion — service worker. DigiRune Studios. */
-const CACHE="mercs-v23";
+const CACHE="mercs-v24";
 const SHELL=[
   "./","index.html","manifest.json","data.js","app.js","auth.js","privacy.html",
   "assets/logo_white.png","assets/logo_black.png","assets/cover.png","assets/opscover.png",
   "icons/icon-192.png","icons/icon-512.png","icons/apple-touch-icon.png",
-  "https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Days+One&family=Barlow:wght@400;500;600;700&display=swap"
+  "https://fonts.googleapis.com/css2?family=Black+Ops+One&family=Bungee&family=DM+Sans:wght@400;500;600;700&display=swap"
 ];
 const IMG_ASSETS=[
   "img/cards/ccc/ccc-breacher-back.jpg",
@@ -376,6 +376,12 @@ self.addEventListener("fetch",e=>{
     fetch(new Request(req,{cache:"no-cache"})).then(res=>{
       if(res&&res.status===200&&url.origin===location.origin){const cp=res.clone();caches.open(CACHE).then(c=>c.put(req,cp));}
       return res;
-    }).catch(()=>caches.match(req).then(hit=>hit||caches.match("index.html")))
+    }).catch(()=>caches.match(req).then(hit=>{
+      if(hit)return hit;
+      // Only a NAVIGATION may fall back to the app shell. Returning index.html for a
+      // failed script/style/image would hand back HTML where code was expected.
+      if(req.mode==="navigate"||(req.headers.get("accept")||"").includes("text/html"))return caches.match("index.html");
+      return Response.error();
+    }))
   );
 });
