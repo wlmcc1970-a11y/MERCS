@@ -436,7 +436,7 @@ builders.megacons=function(p){
   const fac=Store.get("megFac",DATA.factions[0]);
   p.innerHTML=`<h2 class="vh">MegaCons</h2><p class="vsub">12 factions, 123 units. Tap a unit for its full Reference Card.</p>
    ${manual("megacons")}
-   <div class="row"><label class="small muted">MegaCon</label><select id="megFac" translate="no">${factionOptions(fac)}</select>
+   <div class="row"><label class="small muted" translate="no">MegaCon</label><select id="megFac" translate="no">${factionOptions(fac)}</select>
      <input id="megSearch" type="search" placeholder="Search this faction…" style="flex:1;min-width:120px"></div>
    <div id="megList" class="list"></div>
    <div id="megDetail"></div>${LICENSE}`;
@@ -500,7 +500,7 @@ builders.contingency=function(p){
   const fac=Store.get("contBrowseFac",DATA.factions[0]);
   p.innerHTML=`<h2 class="vh">Contingency</h2><p class="vsub">Each MegaCon deck = 19 shared cards + 1 faction-unique card. Tap a card to reveal it.</p>
    ${manual("contingency")}
-   <div class="row"><label class="small muted">MegaCon</label><select id="contFac" translate="no">${factionOptions(fac)}</select>
+   <div class="row"><label class="small muted" translate="no">MegaCon</label><select id="contFac" translate="no">${factionOptions(fac)}</select>
      <input id="contSearch" type="search" placeholder="Search cards…" style="flex:1;min-width:120px">
      <button class="btn ghost sm" id="contToDraw">Deal a hand &#8250;</button></div>
    <div id="contList" class="list"></div>${LICENSE}`;
@@ -555,7 +555,7 @@ builders.corp=function(p){
   const fac=Store.get("corpFac",DATA.factions[0]);
   p.innerHTML=`<h2 class="vh">Corporate Traits</h2><p class="vsub">Faction-wide rules that always apply to every member of the MegaCon.</p>
    ${manual("corp")}
-   <div class="row"><label class="small muted">MegaCon</label><select id="corpFac" translate="no">${factionOptions(fac)}</select></div>
+   <div class="row"><label class="small muted" translate="no">MegaCon</label><select id="corpFac" translate="no">${factionOptions(fac)}</select></div>
    <div id="corpBody"></div>${LICENSE}`;
   const draw=()=>{const f=$("#corpFac",p).value;Store.set("corpFac",f);const c=DATA.corporateTraits[SLUG(f)];
     if(!c){$("#corpBody",p).innerHTML=`<div class="empty">No corporate traits on file.</div>`;return;}
@@ -601,7 +601,7 @@ builders.operations=function(p){
   const idx=Store.get("opBrowseIdx",0);
   p.innerHTML=`<h2 class="vh">Operations</h2><p class="vsub">Ten missions with full briefings, parameters and objectives.</p>
    ${manual("operations")}
-   <div class="row"><label class="small muted">Operation</label><select id="opTabSel">${DATA.operations.map((o,i)=>`<option value="${i}" ${i===idx?'selected':''} translate="no">${esc(o.title)}</option>`).join("")}</select></div>
+   <div class="row"><label class="small muted" translate="no">Operation</label><select id="opTabSel">${DATA.operations.map((o,i)=>`<option value="${i}" ${i===idx?'selected':''} translate="no">${esc(o.title)}</option>`).join("")}</select></div>
    <div id="opTabBody"></div>${LICENSE}`;
   const draw=()=>{const o=DATA.operations[+$("#opTabSel",p).value];Store.set("opBrowseIdx",+$("#opTabSel",p).value);
     const objs=o.securedObjectives.map(s=>`<div class="obj static"><div class="grow">${esc(s.desc)}</div><div class="op">${esc(s.op)}</div></div>`).join("");
@@ -797,7 +797,7 @@ window.closeTools=closeTools;
 function toolCodex(v){
   const fac=Store.get("codexFac",DATA.factions[0]);
   v.innerHTML=`${toolManual("codex")}<p class="vsub">Colors rank each stat across the whole game (it knows low CR/IT/AF are good).</p>
-   <div class="row"><label class="small muted">MegaCon</label><select id="cxFac" translate="no">${factionOptions(fac)}</select>
+   <div class="row"><label class="small muted" translate="no">MegaCon</label><select id="cxFac" translate="no">${factionOptions(fac)}</select>
      <input id="cxSearch" type="search" placeholder="Search name…" style="flex:1;min-width:120px"></div>
    <div id="cxList" class="list"></div><div id="cxDetail"></div>`;
   const draw=()=>{const f=$("#cxFac",v).value;Store.set("codexFac",f);const q=$("#cxSearch",v).value.trim().toLowerCase();
@@ -1293,6 +1293,20 @@ function xlBar(msg,pct){
 }
 function xlBarHide(){const b=document.getElementById("xlbar");if(b)b.classList.remove("show");}
 
+/* ---------- protected MERCS vocabulary ----------
+   A string that IS one of the game's proper nouns is never sent for translation,
+   wherever it appears (labels, headings, chips). Prose that merely mentions a term
+   still translates — terms inside sentences are protected by markup, not by this list. */
+const XL_TERMS=new Set(["mercs","megacon","megacons","contingency","contingency draw",
+  "corporate trait","corporate traits","operation","operations","strike team",
+  "strike team builder","reference card","reference cards","recon"]);
+function xlProtected(t){
+  const k=t.toLowerCase();
+  if(XL_TERMS.has(k))return true;
+  try{if(window.DATA&&DATA.factions&&DATA.factions.some(f=>String(f).toLowerCase()===k))return true;}catch(e){}
+  return false;
+}
+
 /* ---------- which text nodes may be translated ---------- */
 const XL_SKIP='[translate="no"],.notranslate,#gte,#xlbar,#pop,script,style,noscript,svg,select,textarea,input,code,pre,.langlist';
 function xlNodes(root){
@@ -1304,6 +1318,7 @@ function xlNodes(root){
     const t=v.trim();
     if(t.length<2)continue;
     if(!/[A-Za-z]{2}/.test(t))continue;                       /* numbers/glyphs alone: nothing to translate */
+    if(xlProtected(t))continue;                               /* a MERCS proper noun on its own stays English */
     const p=n.parentElement;
     if(!p||p.closest(XL_SKIP))continue;
     out.push(n);
