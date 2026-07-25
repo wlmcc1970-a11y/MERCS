@@ -199,8 +199,8 @@ function manualCue(){ if(_manualCued)return ""; _manualCued=true; return "cue"; 
 const MANUAL={
  home:{steps:["This is your <b>operations dashboard</b>. Move between sections using the <b>tab bar</b> below (on tablet &amp; desktop) or the <b>menu button (&#9776;)</b> at the top-right (on phones).",
    "Tap a <b>quick-entry card</b> to jump straight into a section.",
-   "Open the seven battlefield <b>Tools</b> (plus your Favorites) from the Tools button &mdash; in the header on tablet &amp; desktop, or inside the <b>&#9776; menu</b> on phones &mdash; they overlay any section.",
-   "<b>Search</b> is always in the header (top-right) &mdash; find any unit, card, mission, rule, or keyword instantly."],
+   "Open the seven battlefield <b translate='no'>Tools</b> (plus your Favorites) from the Tools button &mdash; in the header on tablet &amp; desktop, or inside the <b>&#9776; menu</b> on phones &mdash; they overlay any section.",
+   "<b translate='no'>Search</b> is always in the header (top-right) &mdash; find any unit, card, mission, rule, or keyword instantly."],
    tip:"Sign in (optional) &mdash; in the header on tablet &amp; desktop, or inside the <b>&#9776; menu</b> on phones &mdash; to keep teams, trackers and favorites across sessions."},
  megacons:{steps:["Pick a <b>MegaCon</b> (faction) to see its roster in card order.",
    "Tap a unit to open its full Reference Card — the real card front and back, plus a structured breakdown.",
@@ -232,7 +232,7 @@ const MANUAL={
    tip:"Positional and Elevation modifiers can stack — read each table's notes."},
  keywords:{steps:["A searchable <b>glossary</b> of every Keyword and Personal Ability.",
    "Type in the box to filter; results stay alphabetized.",
-   "Switch between <b>Keywords</b> and <b>Personal Abilities</b> with the toggle.",
+   "Switch between <b translate='no'>Keywords</b> and <b>Personal Abilities</b> with the toggle.",
    "Keyword names also appear on unit weapons — tap them there to pop the definition."],
    tip:"37 Keywords and 60 Personal Abilities, transcribed verbatim."}
 };
@@ -1398,6 +1398,27 @@ function _gteInject(){
   sc.onerror=()=>{_gteState="failed";};
   document.head.appendChild(sc);
 }
+/* Restoring the original English on the legacy path.
+   Setting .goog-te-combo back to "" does NOT reliably untranslate — verified failing on the
+   wrapped Android app and on iPhone. The widget's own state lives in the `googtrans` cookie,
+   so the deterministic restore is: clear that cookie on every scope it may have been set
+   under, forget our saved choice, and reload. Everything is service-worker cached, so the
+   reload is fast and the app restores the tab you were on. */
+function xlClearGoogTrans(){
+  var host=location.hostname, parts=host.split(".");
+  var domains=["",host,"."+host];
+  if(parts.length>2)domains.push("."+parts.slice(-2).join("."));
+  var paths=["/",""+location.pathname];
+  domains.forEach(function(d){paths.forEach(function(pa){
+    try{document.cookie="googtrans=;expires=Thu, 01 Jan 1970 00:00:01 GMT;path="+(pa||"/")+(d?";domain="+d:"");}catch(e){}
+  });});
+}
+function xlLegacyRestore(){
+  xlBar("Restoring English…",null);
+  try{localStorage.removeItem(XL_LANGKEY);}catch(e){}
+  xlClearGoogTrans();
+  setTimeout(function(){location.reload();},120);
+}
 function xlLegacy(code){
   _gteInject();
   const probe=xlNodes(document.body)[0];
@@ -1422,7 +1443,10 @@ function xlLegacy(code){
 async function setTranslate(code){
   popClose();
   if(XL.busy)return;
-  if(!xlHasNative()){xlLegacy(code);return;}
+  if(!xlHasNative()){
+    if(!code){xlLegacyRestore();return;}          /* deterministic restore — see xlLegacyRestore */
+    xlLegacy(code);return;
+  }
   XL.busy=true;
   try{
     xlUnobserve();
@@ -1512,16 +1536,16 @@ window.openAbout=openAbout;
    ============================================================ */
 function buildNavMenu(){
   const list=$("#navList");if(!list)return;
-  list.innerHTML=TABS.map(t=>`<button class="navlink" data-nav="${t.id}"><span class="nico">${t.ico}</span><span>${esc(t.t)}</span></button>`).join("");
+  list.innerHTML=TABS.map(t=>`<button class="navlink" data-nav="${t.id}"><span class="nico">${t.ico}</span><span translate="no">${esc(t.t)}</span></button>`).join("");
   $$("#navList .navlink").forEach(b=>b.onclick=()=>{navTo(b.dataset.nav);closeNav();});
   const acts=$("#navActs");
   if(acts){
     acts.innerHTML=`
-      <button class="navact" data-act="search"><span class="nico">${ICO.search}</span><span>Search</span></button>
-      <button class="navact" data-act="translate"><span class="nico">${ICO.globe}</span><span>Translate</span></button>
-      <button class="navact" data-act="tools"><span class="nico">${ICO.tools}</span><span>Tools</span></button>
-      <button class="navact" data-act="theme"><span class="nico">${ICO.book}</span><span>Low-light</span></button>
-      <button class="navact navact-wide" data-act="account"><span class="nico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.5 4-6.5 8-6.5s8 2 8 6.5"/></svg></span><span>Sign In</span></button>`;
+      <button class="navact" data-act="search"><span class="nico">${ICO.search}</span><span translate="no">Search</span></button>
+      <button class="navact" data-act="translate"><span class="nico">${ICO.globe}</span><span translate="no">Translate</span></button>
+      <button class="navact" data-act="tools"><span class="nico">${ICO.tools}</span><span translate="no">Tools</span></button>
+      <button class="navact" data-act="theme"><span class="nico">${ICO.book}</span><span translate="no">Low-light</span></button>
+      <button class="navact navact-wide" data-act="account"><span class="nico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.5 4-6.5 8-6.5s8 2 8 6.5"/></svg></span><span translate="no">Sign In</span></button>`;
     $$("#navActs .navact").forEach(b=>b.onclick=()=>{const a=b.dataset.act;closeNav();
       if(a==="search")openSearch();
       else if(a==="tools")openToolsMenu();
@@ -1776,7 +1800,7 @@ function initSyncTip(){
 function boot(){
   restoreSession();
   // build tab bar
-  $("#tabbar").innerHTML=TABS.map(t=>`<button class="tab" data-tab="${t.id}"><span class="tico">${t.ico}</span><span class="tlbl">${esc(t.t)}</span></button>`).join("");
+  $("#tabbar").innerHTML=TABS.map(t=>`<button class="tab" data-tab="${t.id}"><span class="tico">${t.ico}</span><span class="tlbl" translate="no">${esc(t.t)}</span></button>`).join("");
   $$("#tabbar .tab").forEach(b=>b.onclick=()=>navTo(b.dataset.tab));
   // header buttons
   $("#acctBtn").onclick=openAccount;updateAccountUI();
