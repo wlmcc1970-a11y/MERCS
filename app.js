@@ -379,6 +379,14 @@ function toggleFav(kind,key,label){const f=favs();const arr=f[kind];const i=arr.
 }
 function starBtn(kind,key,label){const on=isFav(kind,key);
   return `<button class="star ${on?'on':''}" data-fav="${kind}|${esc(key)}" data-lbl="${esc(label||'')}" aria-label="Favorite" title="Favorite">${ICO.star}</button>`;}
+/* role="button" list rows are DIVs (a <button> may not nest a <button> - the parser
+   closes the outer one, which used to drop the star and chevron below the row).
+   Divs are not natively keyboard-activatable, so Enter/Space are wired here. */
+document.addEventListener("keydown",function(e){
+  if(e.key!=="Enter"&&e.key!==" ")return;
+  var t=e.target;
+  if(t&&t.classList&&t.classList.contains("item")&&t.getAttribute("role")==="button"){e.preventDefault();t.click();}
+});
 function wireStars(root){$$("[data-fav]",root).forEach(b=>b.onclick=ev=>{ev.stopPropagation();
   const[kind,key]=b.dataset.fav.split("|");toggleFav(kind,key,b.dataset.lbl);b.classList.toggle("on");});}
 
@@ -425,12 +433,12 @@ builders.home=function(p){
 
 /* ===================== MEGACONS ===================== */
 function unitListItem(u){const i=unitIndex(u);
-  return `<button class="item unititem" data-unit="${i}">
+  return `<div class="item unititem" role="button" tabindex="0" data-unit="${i}">
     <img class="thumb" loading="lazy" src="${esc(u.imgFront)}" alt="">
     <span class="grow"><span class="nm" translate="no">${esc(cap(u.name))}</span>
       <span class="meta"><span translate="no">${esc(u.archetype)}</span> &middot; BL ${esc(u.stats.BL)} &middot; AF ${esc(u.stats.AF)}</span></span>
     ${u.hasQuick?'<span class="chip q">Quick</span>':''}${u.deployable?'<span class="chip dep">Deploy</span>':''}
-    ${starBtn("units",u.id,cap(u.name))}<span class="ar">&#8250;</span></button>`;}
+    ${starBtn("units",u.id,cap(u.name))}<span class="ar">&#8250;</span></div>`;}
 
 builders.megacons=function(p){
   const fac=Store.get("megFac",DATA.factions[0]);
@@ -992,15 +1000,15 @@ function toolStrike(v){
 function toolFavorites(v){
   const f=favs();
   const unitItems=f.units.map(id=>{const u=DATA.units.find(x=>x.id===id);if(!u)return"";
-    return `<button class="item" data-go-unit="${unitIndex(u)}"><img class="thumb" loading="lazy" src="${esc(u.imgFront)}" alt="">
+    return `<div class="item" role="button" tabindex="0" data-go-unit="${unitIndex(u)}"><img class="thumb" loading="lazy" src="${esc(u.imgFront)}" alt="">
       <span class="grow"><span class="nm" translate="no">${esc(cap(u.name))}</span><span class="meta" translate="no">${esc(u.faction)} · ${esc(u.archetype)}</span></span>
-      <button class="stog" data-unfav="units|${esc(id)}">✕</button><span class="ar">&#8250;</span></button>`;}).join("");
+      <button class="stog" data-unfav="units|${esc(id)}">✕</button><span class="ar">&#8250;</span></div>`;}).join("");
   const contItems=f.contingency.map(key=>{const[fac,title]=key.split("|");const card=contCardsFor(fac).find(c=>c.title===title);if(!card)return"";
     return `<div class="item"><span class="grow"><span class="nm" translate="no">${esc(card.title)}</span><span class="meta" translate="no">${esc(fac)} · ${esc(card.op)}</span></span>
       <button class="stog" data-unfav="contingency|${esc(key)}">✕</button></div>`;}).join("");
   const opItems=f.operations.map(id=>{const o=DATA.operations.find(x=>x.id===id);if(!o)return"";
-    return `<button class="item" data-go-op="${DATA.operations.indexOf(o)}"><span class="grow"><span class="nm" translate="no">${esc(o.title)}</span></span>
-      <button class="stog" data-unfav="operations|${esc(id)}">✕</button><span class="ar">&#8250;</span></button>`;}).join("");
+    return `<div class="item" role="button" tabindex="0" data-go-op="${DATA.operations.indexOf(o)}"><span class="grow"><span class="nm" translate="no">${esc(o.title)}</span></span>
+      <button class="stog" data-unfav="operations|${esc(id)}">✕</button><span class="ar">&#8250;</span></div>`;}).join("");
   const empty=!unitItems&&!contItems&&!opItems;
   v.innerHTML=`${toolManual("favorites")}<p class="vsub">Everything you've starred. Tap to jump to the record.</p>
     ${empty?'<div class="empty">No favorites yet. Tap the &#9733; on any unit, contingency card or operation.</div>':''}

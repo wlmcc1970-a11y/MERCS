@@ -643,6 +643,19 @@ h1,h2,h3,h4,.vh,.bar .ttl,.splash .cause,.handcard .ct{font-family:var(--font-he
 header.bar{border-bottom:3px solid var(--cyan)}
 .tile .ico{color:var(--cyan)}
 .tile .edge{background:linear-gradient(180deg,#f2cd3a,#d9b21f)}
+
+/* ===== FIX 2026-07-27: clickable list rows are DIVs with role="button" =====
+   A <button> may not contain a <button>; the parser closed the row early, which
+   dropped the favourite star and the chevron BELOW the row, centred the label,
+   and left the right half of the row unclickable. Rows are now divs. */
+.item[role="button"]{cursor:pointer;width:100%;text-align:left}
+.item[role="button"]:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
+.item .grow{min-width:0}
+.item .nm{font-size:.95rem}
+/* name and meta stack on every list row (they used to run together in
+   Favourites and the Strike Team roster: "COMMISSARUSCR - Commissar") */
+.item .grow>.nm,.item .grow>.meta{display:block}
+.item .grow>.meta{font-weight:400}
 </style>
 </head>
 <body>
