@@ -11,6 +11,12 @@ const $$=(s,r=document)=>[...r.querySelectorAll(s)];
 const el=(t,c,h)=>{const e=document.createElement(t);if(c)e.className=c;if(h!=null)e.innerHTML=h;return e;};
 const STAT_ORDER=["IM","RE","CR","MP","BL","AV","AF","IT"];
 const TERM=DATA.terms;
+/* MegaCon menus are presented A-Z (publisher request, Derek Osborne 2026-07-28).
+   DERIVED copy, for DISPLAY and DEFAULTS ONLY. DATA.factions is never reordered:
+   units, operations and saved state are addressed by ARRAY INDEX, so mutating a
+   source array would silently repoint saved Strike Teams, Round Tracker rosters,
+   Damage squads and Compare selections. Sorting a copy is index-safe. */
+const FACTIONS_AZ=[...DATA.factions].sort((a,b)=>String(a).localeCompare(String(b),'en',{sensitivity:'base'}));
 const SLUG=s=>String(s).toLowerCase().replace(/[^a-z0-9]+/g,"");
 
 /* ---------- translate-safe rendering (protected terms never translated) ---------- */
@@ -128,7 +134,7 @@ function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random
 function d10(){return 1+Math.floor(Math.random()*10);}
 function extByFaction(f){return DATA.units.filter(u=>u.faction===f);}
 function unitIndex(u){return DATA.units.indexOf(u);}
-function factionOptions(sel){return DATA.factions.map(f=>`<option ${f===sel?"selected":""}>${esc(f)}</option>`).join("");}
+function factionOptions(sel){return FACTIONS_AZ.map(f=>`<option ${f===sel?"selected":""}>${esc(f)}</option>`).join("");}
 
 /* ---------- loading spinner overlay (>200ms ops) ---------- */
 let _spinT=null;
@@ -345,6 +351,11 @@ const TAB_IDS=TABS.map(t=>t.id);
 const built={};
 let CURRENT_TAB=null;
 function rebuildAll(){Object.keys(built).forEach(k=>{delete built[k];});TAB_IDS.forEach(id=>{const p=$("#panel-"+id);if(p)p.innerHTML="";});if(CURRENT_TAB)ensureBuilt(CURRENT_TAB);}
+/* A deep link changes the stored selection (faction, operation, rules mode) and then
+   navigates. ensureBuilt() is a build-ONCE cache, so without this the target panel keeps
+   whatever it rendered earlier and the linked record is not in the DOM to reveal or scroll
+   to. Discard the panel first so navTo() rebuilds it against the new selection. */
+function rebuildPanel(id){delete built[id];const p=$("#panel-"+id);if(p)p.innerHTML="";}
 function ensureBuilt(id){if(built[id])return;const fn=builders[id];if(fn){spin(true);fn($("#panel-"+id));spin(false);built[id]=true;}}
 function navTo(id,opts){opts=opts||{};
   if(!TAB_IDS.includes(id))id="home";
@@ -370,12 +381,15 @@ window.addEventListener("popstate",e=>{
 const builders={};
 
 /* ---- shared: favorites store ---- */
-function favs(){return Store.get("favs",{units:[],contingency:[],operations:[]});}
+function favs(){const f=Store.get("favs",null)||{};const arr=k=>Array.isArray(f[k])?f[k]:[];
+  /* legacy blobs stored a bare faction for contingency (pre-2026-07-28 key bug); an entry with
+     no "|" can never resolve to a card, so drop it rather than let it ghost forever. */
+  return{units:arr("units"),contingency:arr("contingency").filter(x=>String(x).indexOf("|")>0),operations:arr("operations")};}
 function isFav(kind,key){return favs()[kind].includes(key);}
 function toggleFav(kind,key,label){const f=favs();const arr=f[kind];const i=arr.indexOf(key);
   if(i>=0){arr.splice(i,1);toast("Removed from Favorites");}else{arr.push(key);toast((label||"Added")+" — favorited");}
   Store.set("favs",f);
-  if(built.megacons&&CURRENT_TAB==="megacons"){/* refresh star states lazily on next view */}
+  syncStars();
 }
 function starBtn(kind,key,label){const on=isFav(kind,key);
   return `<button class="star ${on?'on':''}" data-fav="${kind}|${esc(key)}" data-lbl="${esc(label||'')}" aria-label="Favorite" title="Favorite">${ICO.star}</button>`;}
@@ -387,8 +401,13 @@ document.addEventListener("keydown",function(e){
   var t=e.target;
   if(t&&t.classList&&t.classList.contains("item")&&t.getAttribute("role")==="button"){e.preventDefault();t.click();}
 });
+function favParts(v){const s=String(v),i=s.indexOf("|");return i<0?[s,""]:[s.slice(0,i),s.slice(i+1)];}
+/* Re-sync EVERY rendered star from the store. Stars for one record can exist in several
+   places at once (list row, open detail card, Favorites tool) and on panels that are cached
+   and will not rebuild, so toggling only the tapped element left the others lying. */
+function syncStars(){$$("[data-fav]").forEach(b=>{const[k,key]=favParts(b.dataset.fav);b.classList.toggle("on",isFav(k,key));});}
 function wireStars(root){$$("[data-fav]",root).forEach(b=>b.onclick=ev=>{ev.stopPropagation();
-  const[kind,key]=b.dataset.fav.split("|");toggleFav(kind,key,b.dataset.lbl);b.classList.toggle("on");});}
+  const[kind,key]=favParts(b.dataset.fav);toggleFav(kind,key,b.dataset.lbl);});}
 
 /* ===================== HOME ===================== */
 builders.home=function(p){
@@ -441,7 +460,7 @@ function unitListItem(u){const i=unitIndex(u);
     ${starBtn("units",u.id,cap(u.name))}<span class="ar">&#8250;</span></div>`;}
 
 builders.megacons=function(p){
-  const fac=Store.get("megFac",DATA.factions[0]);
+  const fac=Store.get("megFac",FACTIONS_AZ[0]);
   p.innerHTML=`<h2 class="vh">MegaCons</h2><p class="vsub">12 factions, 123 units. Tap a unit for its full Reference Card.</p>
    ${manual("megacons")}
    <div class="row"><label class="small muted" translate="no">MegaCon</label><select id="megFac" translate="no">${factionOptions(fac)}</select>
@@ -505,7 +524,7 @@ window.lightbox=lightbox;
 function uniqueFor(fac){return DATA.contingency.unique[SLUG(fac)];}
 function contCardsFor(fac){const u=uniqueFor(fac);return [...DATA.contingency.core,...(u?[u]:[])];}
 builders.contingency=function(p){
-  const fac=Store.get("contBrowseFac",DATA.factions[0]);
+  const fac=Store.get("contBrowseFac",FACTIONS_AZ[0]);
   p.innerHTML=`<h2 class="vh">Contingency</h2><p class="vsub">Each MegaCon deck = 19 shared cards + 1 faction-unique card. Tap a card to reveal it.</p>
    ${manual("contingency")}
    <div class="row"><label class="small muted" translate="no">MegaCon</label><select id="contFac" translate="no">${factionOptions(fac)}</select>
@@ -560,7 +579,7 @@ function tableHTML(t){if(!t)return "";
 /* light markdown: **bold** and *italic* inline, escape rest */
 function mdInline(s){return esc(s).replace(/\*\*([^*]+)\*\*/g,"<b>$1</b>").replace(/\*([^*]+)\*/g,"<i>$1</i>");}
 builders.corp=function(p){
-  const fac=Store.get("corpFac",DATA.factions[0]);
+  const fac=Store.get("corpFac",FACTIONS_AZ[0]);
   p.innerHTML=`<h2 class="vh">Corporate Traits</h2><p class="vsub">Faction-wide rules that always apply to every member of the MegaCon.</p>
    ${manual("corp")}
    <div class="row"><label class="small muted" translate="no">MegaCon</label><select id="corpFac" translate="no">${factionOptions(fac)}</select></div>
@@ -803,7 +822,7 @@ window.closeTools=closeTools;
 
 /* ---------- TOOL 1: CODEX ---------- */
 function toolCodex(v){
-  const fac=Store.get("codexFac",DATA.factions[0]);
+  const fac=Store.get("codexFac",FACTIONS_AZ[0]);
   v.innerHTML=`${toolManual("codex")}<p class="vsub">Colors rank each stat across the whole game (it knows low CR/IT/AF are good).</p>
    <div class="row"><label class="small muted" translate="no">MegaCon</label><select id="cxFac" translate="no">${factionOptions(fac)}</select>
      <input id="cxSearch" type="search" placeholder="Search name…" style="flex:1;min-width:120px"></div>
@@ -823,7 +842,7 @@ function codexDetail(v,i){const u=DATA.units[i];
   $("#cxDetail",v).innerHTML=`<div class="unitcard"><div class="uhead"><h3 translate="no">${esc(cap(u.name))}</h3><span class="fac" translate="no">${esc(u.faction)}</span></div>
     <div class="stats">${stats}</div><div class="small muted">Tap a stat for its meaning.</div>
     <button class="btn sm" id="cxOpen" style="margin-top:.7rem">View full MegaCon card &#8250;</button></div>`;
-  const ob=$("#cxOpen",v);if(ob)ob.onclick=()=>{closeTools();Store.set("megFac",u.faction);navTo("megacons");setTimeout(()=>showUnit(i),60);};
+  const ob=$("#cxOpen",v);if(ob)ob.onclick=()=>{closeTools();deepGoUnit(u.faction,i,u.id);};
   $("#cxDetail",v).scrollIntoView({behavior:"smooth",block:"start"});
 }
 
@@ -832,7 +851,7 @@ function toolRound(v){
   let roster=Store.get("roundRoster",[]);let round=Store.get("roundNo",1);
   v.innerHTML=`${toolManual("round")}<p class="vsub">Add your MERCS, roll initiative, activate top-down. Quick breaks ties.</p>
    <div class="rule"><span><b>Quick:</b> a MERCS with Quick acts first among models tied on the same Initiative Step.</span></div>
-   <div class="row"><select id="rdFac" translate="no">${factionOptions(DATA.factions[0])}</select><select id="rdUnit" translate="no"></select><button class="btn sm" id="rdAdd">+ Add</button></div>
+   <div class="row"><select id="rdFac" translate="no">${factionOptions(FACTIONS_AZ[0])}</select><select id="rdUnit" translate="no"></select><button class="btn sm" id="rdAdd">+ Add</button></div>
    <div class="row" style="margin-top:.7rem"><span class="chip">Round <b id="rdRound" style="margin-left:.3rem">${round}</b></span>
      <button class="btn ghost sm" id="rdRoll">&#8635; Roll initiative</button><button class="btn ghost sm" id="rdNext">Next round &#8250;</button><button class="btn ghost sm" id="rdClear">Clear page</button></div>
    <div id="rdList" class="list"></div>`;
@@ -897,7 +916,7 @@ function toolOpSetup(v){
 function deckForDraw(fac){const u=uniqueFor(fac);
   return [...DATA.contingency.core.map(c=>({title:c.title,op:c.op,text:c.text,img:c.img,core:true})),...(u?[{title:u.title,op:u.op,text:u.text,img:u.img,core:false}]:[])];}
 function toolDraw(v){
-  const fac=Store.get("drawFac",DATA.factions[0]);const hand=Store.get("drawHand",4);
+  const fac=Store.get("drawFac",FACTIONS_AZ[0]);const hand=Store.get("drawHand",4);
   v.innerHTML=`${toolManual("draw")}<p class="vsub">Deck = 19 shared + 1 faction-unique. Deal, set your Live card, discard to the limit.</p>
    ${Store.get("drawOpName")?`<div class="rule"><span>Hand size from <b>${esc(Store.get("drawOpName"))}</b>: deal <b>${hand}</b>. Live Contingency Round is <b>${Store.get("drawLive")??'?'}</b>.</span></div>`:''}
    <div class="row"><select id="ctFac" translate="no">${factionOptions(fac)}</select><label class="small muted">Hand</label>
@@ -928,7 +947,7 @@ function toolDamage(v){
   let squad=Store.get("dmgSquad",[]);
   v.innerHTML=`${toolManual("damage")}<p class="vsub">Track Blood per MERCS and resolve Armor Failure exactly by the book.</p>
    <div class="rule"><span><b>Armor Failure:</b> after a hit, roll a d10 — <b>equal or higher than AF = armor holds</b>; lower = it fails. <b>AF 0 always fails.</b> A model dies when Blood reaches its BL.</span></div>
-   <div class="row"><select id="dgFac" translate="no">${factionOptions(DATA.factions[0])}</select><select id="dgUnit" translate="no"></select><button class="btn sm" id="dgAdd">+ Add</button><button class="btn ghost sm" id="dgClear">Clear page</button></div><div id="dgList"></div>`;
+   <div class="row"><select id="dgFac" translate="no">${factionOptions(FACTIONS_AZ[0])}</select><select id="dgUnit" translate="no"></select><button class="btn sm" id="dgAdd">+ Add</button><button class="btn ghost sm" id="dgClear">Clear page</button></div><div id="dgList"></div>`;
   const STATUS=["Pinned","Disoriented","Burning","Forced","Suppressed","Armor Broken"];
   const fillUnits=()=>{$("#dgUnit",v).innerHTML=extByFaction($("#dgFac",v).value).map(u=>`<option value="${unitIndex(u)}">${esc(cap(u.name))} (BL ${esc(u.stats.BL)} · AF ${esc(u.stats.AF)})</option>`).join("");};
   const save=()=>Store.set("dmgSquad",squad);
@@ -959,7 +978,7 @@ function toolStrike(v){
   if(!DATA.factions.includes(team.fac))team.fac=null;
   const save=()=>Store.set("strikeTeam",team);
   function render(){
-    const facSel=`<select id="stFac" translate="no"><option value="">— pick MegaCon —</option>${DATA.factions.map(f=>`<option ${f===team.fac?'selected':''}>${esc(f)}</option>`).join("")}</select>`;
+    const facSel=`<select id="stFac" translate="no"><option value="">— pick MegaCon —</option>${FACTIONS_AZ.map(f=>`<option ${f===team.fac?'selected':''}>${esc(f)}</option>`).join("")}</select>`;
     const sizeSel=`<select id="stSize">${[3,4,5].map(n=>`<option value="${n}" ${n===team.size?'selected':''}>${n}-member team</option>`).join("")}</select>`;
     let addSel="";
     if(team.fac){
@@ -1003,7 +1022,7 @@ function toolFavorites(v){
     return `<div class="item" role="button" tabindex="0" data-go-unit="${unitIndex(u)}"><img class="thumb" loading="lazy" src="${esc(u.imgFront)}" alt="">
       <span class="grow"><span class="nm" translate="no">${esc(cap(u.name))}</span><span class="meta" translate="no">${esc(u.faction)} · ${esc(u.archetype)}</span></span>
       <button class="stog" data-unfav="units|${esc(id)}">✕</button><span class="ar">&#8250;</span></div>`;}).join("");
-  const contItems=f.contingency.map(key=>{const[fac,title]=key.split("|");const card=contCardsFor(fac).find(c=>c.title===title);if(!card)return"";
+  const contItems=f.contingency.map(key=>{const[fac,title]=favParts(key);const card=contCardsFor(fac).find(c=>c.title===title);if(!card)return"";
     return `<div class="item"><span class="grow"><span class="nm" translate="no">${esc(card.title)}</span><span class="meta" translate="no">${esc(fac)} · ${esc(card.op)}</span></span>
       <button class="stog" data-unfav="contingency|${esc(key)}">✕</button></div>`;}).join("");
   const opItems=f.operations.map(id=>{const o=DATA.operations.find(x=>x.id===id);if(!o)return"";
@@ -1015,9 +1034,9 @@ function toolFavorites(v){
     ${unitItems?`<h3 class="rsh" style="font-size:1rem">Units</h3><div class="list">${unitItems}</div>`:''}
     ${contItems?`<h3 class="rsh" style="font-size:1rem;margin-top:.8rem">Contingency Cards</h3><div class="list">${contItems}</div>`:''}
     ${opItems?`<h3 class="rsh" style="font-size:1rem;margin-top:.8rem">Operations</h3><div class="list">${opItems}</div>`:''}`;
-  $$("[data-go-unit]",v).forEach(b=>b.onclick=()=>{const i=+b.dataset.goUnit;Store.set("megFac",DATA.units[i].faction);closeTools();navTo("megacons");setTimeout(()=>showUnit(i),60);});
-  $$("[data-go-op]",v).forEach(b=>b.onclick=()=>{const i=+b.dataset.goOp;Store.set("opBrowseIdx",i);closeTools();navTo("operations");});
-  $$("[data-unfav]",v).forEach(b=>b.onclick=()=>{const[kind,key]=b.dataset.unfav.split("|");const ff=favs();ff[kind]=ff[kind].filter(x=>x!==(kind==="contingency"?key:key));Store.set("favs",ff);toolFavorites(v);});
+  $$("[data-go-unit]",v).forEach(b=>b.onclick=()=>{const i=+b.dataset.goUnit;closeTools();deepGoUnit(DATA.units[i].faction,i,DATA.units[i].id);});
+  $$("[data-go-op]",v).forEach(b=>b.onclick=()=>{const i=+b.dataset.goOp;closeTools();deepGoOp(i);});
+  $$("[data-unfav]",v).forEach(b=>b.onclick=ev=>{ev.stopPropagation();const[kind,key]=favParts(b.dataset.unfav);const ff=favs();ff[kind]=ff[kind].filter(x=>x!==key);Store.set("favs",ff);syncStars();toolFavorites(v);});
 }
 
 /* ---------- TOOL 8: COMPARE UNITS (side-by-side) ---------- */
@@ -1025,7 +1044,7 @@ function toolCompare(v){
   let sel=Store.get("cmpSel",[]).filter(i=>Number.isInteger(i)&&DATA.units[i]).slice(0,3);
   const save=()=>Store.set("cmpSel",sel);
   const draw=()=>{
-    const facSel=$("#cmpFac",v)?$("#cmpFac",v).value:DATA.factions[0];
+    const facSel=$("#cmpFac",v)?$("#cmpFac",v).value:FACTIONS_AZ[0];
     const addBlock=`<div class="cmp-add">
         <select id="cmpFac" translate="no">${factionOptions(facSel)}</select>
         <select id="cmpUnit" translate="no"></select>
@@ -1112,12 +1131,14 @@ function scrollToRecord(id){
 }
 function deepGoUnit(fac,i,id){
   Store.set("megFac",fac);
+  rebuildPanel("megacons");
   navTo("megacons");
   // megacons builder draws the roster for stored faction; showUnit renders the detail card.
   requestAnimationFrame(()=>{showUnit(i);scrollToRecord("rec-unit-"+id);});
 }
 function deepGoCont(fac,title){
   Store.set("contBrowseFac",fac);
+  rebuildPanel("contingency");
   navTo("contingency");
   const slug=SLUG(title);
   requestAnimationFrame(()=>{
@@ -1128,17 +1149,20 @@ function deepGoCont(fac,title){
 }
 function deepGoCorp(fac){
   Store.set("corpFac",fac);
+  rebuildPanel("corp");
   navTo("corp");
   requestAnimationFrame(()=>scrollToRecord("rec-corp-"+SLUG(fac)));
 }
 function deepGoOp(i){
   Store.set("opBrowseIdx",i);
+  rebuildPanel("operations");
   navTo("operations");
   requestAnimationFrame(()=>scrollToRecord("rec-op-"+DATA.operations[i].id));
 }
 function deepGoRule(slug,mode){
   mode=mode||"core";
   Store.set("rulesMode",mode);
+  rebuildPanel("rules");
   navTo("rules");
   requestAnimationFrame(()=>{
     const panel=$("#panel-rules");
@@ -1154,6 +1178,7 @@ function defPop(k){const t=DATA.termDefs&&DATA.termDefs[k];if(!t)return;
 window.defPop=defPop;
 function deepGoTerm(mode,name){
   Store.set("kwMode",mode);
+  rebuildPanel("keywords");
   navTo("keywords");
   // clear any leftover filter so the target row renders, then re-draw
   requestAnimationFrame(()=>{
@@ -1182,7 +1207,7 @@ function buildSearchIndex(){
   const idx=[];
   DATA.units.forEach((u,i)=>idx.push({type:"Unit",key:"rec-unit-"+u.id,fac:u.faction,uidx:i,label:cap(u.name),sub:u.faction+" · "+u.archetype,text:(u.name+" "+u.archetype+" "+u.weapons.map(w=>w.name).join(" ")+" "+(u.kit||"")),go:()=>deepGoUnit(u.faction,i,u.id)}));
   // Contingency: core cards (19, identical across all 12 decks) indexed ONCE; faction-unique (1/deck) once each.
-  DATA.contingency.core.forEach(c=>idx.push({type:"Contingency",key:"rec-cont-"+SLUG(c.title),fac:DATA.factions[0],label:c.title,sub:"All decks · "+c.op,text:c.title+" "+c.text,go:()=>deepGoCont(DATA.factions[0],c.title)}));
+  DATA.contingency.core.forEach(c=>idx.push({type:"Contingency",key:"rec-cont-"+SLUG(c.title),fac:FACTIONS_AZ[0],label:c.title,sub:"All decks · "+c.op,text:c.title+" "+c.text,go:()=>deepGoCont(FACTIONS_AZ[0],c.title)}));
   DATA.factions.forEach(f=>{const u=uniqueFor(f);if(u)idx.push({type:"Contingency",key:"rec-cont-"+SLUG(u.title),fac:f,label:u.title,sub:f+" · "+u.op,text:u.title+" "+u.text,go:()=>deepGoCont(f,u.title)});});
   DATA.factions.forEach(f=>{const cc=DATA.corporateTraits[SLUG(f)];if(cc)cc.traits.forEach(t=>idx.push({type:"Corporate",key:"rec-corp-"+SLUG(f),fac:f,label:t.name,sub:f+" · Corporate Trait",text:t.name+" "+t.text,go:()=>deepGoCorp(f)}));});
   DATA.operations.forEach((o,i)=>idx.push({type:"Operation",key:"rec-op-"+o.id,oidx:i,label:o.title,sub:"Operation",text:o.title+" "+o.briefing,go:()=>deepGoOp(i)}));
@@ -1545,7 +1570,7 @@ window.openAbout=openAbout;
 function buildNavMenu(){
   const list=$("#navList");if(!list)return;
   list.innerHTML=TABS.map(t=>`<button class="navlink" data-nav="${t.id}"><span class="nico">${t.ico}</span><span translate="no">${esc(t.t)}</span></button>`).join("");
-  $$("#navList .navlink").forEach(b=>b.onclick=()=>{navTo(b.dataset.nav);closeNav();});
+  $$("#navList .navlink").forEach(b=>b.onclick=()=>{closeNav();navTo(b.dataset.nav);});
   const acts=$("#navActs");
   if(acts){
     acts.innerHTML=`
