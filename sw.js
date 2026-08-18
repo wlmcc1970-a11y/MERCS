@@ -1,5 +1,6 @@
 /* MERCS Companion — service worker. DigiRune Studios. */
-const CACHE="mercs-v29";
+const CACHE="mercs-v30";
+const MEDIA="mercs-media-v1";   // card images live here — a STABLE cache the shell version bump never purges, so a code update no longer wipes/re-downloads the ~28 MB of images
 const SHELL=[
   "./","index.html","manifest.json","data.js","app.js","auth.js","privacy.html",
   "assets/logo_white.png","assets/logo_black.png","assets/cover.png","assets/opscover.png",
@@ -311,9 +312,20 @@ self.addEventListener("install",e=>{
 self.addEventListener("activate",e=>{
   e.waitUntil((async()=>{
     const keys=await caches.keys();
-    await Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)));
+    // Rescue already-downloaded card images from any prior cache into the persistent MEDIA cache,
+    // so moving images to their own cache costs existing users NO re-download.
+    const media=await caches.open(MEDIA);
+    for(const k of keys){
+      if(k===CACHE||k===MEDIA)continue;
+      const oc=await caches.open(k);
+      for(const url of IMG_ASSETS){
+        try{ if(await media.match(url))continue; const r=await oc.match(url); if(r)await media.put(url,r.clone()); }catch(err){}
+      }
+    }
+    // Keep only the current shell (CACHE) and the persistent images (MEDIA); drop everything else.
+    await Promise.all(keys.filter(k=>k!==CACHE&&k!==MEDIA).map(k=>caches.delete(k)));
     await self.clients.claim();
-    // Self-start image precache on first activate (guarded so it runs once).
+    // Fill any gaps in MEDIA (skips anything already rescued above — no needless re-download).
     precacheImages();
   })());
 });
@@ -322,7 +334,7 @@ let PRECACHING=false;
 async function precacheImages(){
   if(PRECACHING)return; PRECACHING=true;
   try{
-    const cache=await caches.open(CACHE);
+    const cache=await caches.open(MEDIA);
     const total=IMG_ASSETS.length;
     let done=0;
     // Count anything already cached as done up front.
@@ -352,14 +364,15 @@ self.addEventListener("fetch",e=>{
   const req=e.request;
   if(req.method!=="GET")return;
   const url=new URL(req.url);
-  // cache-first for images (viewed cards persist offline)
+  // cache-first for images (viewed cards persist offline). Card images live in the persistent MEDIA
+  // cache; small shell images (logos/icons) live in CACHE — caches.match() resolves either.
   if(url.pathname.includes("/img/")||/\.(jpg|jpeg|png|webp)$/i.test(url.pathname)){
-    e.respondWith(caches.open(CACHE).then(async c=>{
-      const hit=await c.match(req);
+    e.respondWith((async()=>{
+      const hit=await caches.match(req);
       if(hit)return hit;
-      try{const res=await fetch(req);if(res&&res.status===200)c.put(req,res.clone());return res;}
-      catch(err){return hit||Response.error();}
-    }));
+      try{const res=await fetch(req);if(res&&res.status===200){const c=await caches.open(MEDIA);c.put(req,res.clone());}return res;}
+      catch(err){return Response.error();}
+    })());
     return;
   }
   // fonts: cache-first
