@@ -58,12 +58,26 @@
   /* ── SESSION <-> cloud blob helpers (SESSION is the sync unit) ──────────── */
   function snapshotLocal(){ try{ return JSON.parse(JSON.stringify(SESSION||{})); }catch(e){ return {}; } }
   function keyCount(o){ try{ return o?Object.keys(o).length:0; }catch(e){ return 0; } }
-  function mergeMaps(cloud, local){ var o={},k; for(k in cloud)o[k]=cloud[k]; for(k in local)o[k]=local[k]; return o; } // union, local wins
-  function decideSync(cloudKeys, hasLocal){ if(cloudKeys===0)return hasLocal?'push':'noop'; return hasLocal?'merge':'pull'; }
-  function adopt(obj){                     // replace SESSION with obj, persist + repaint; return changed
+  function unionArr(a,b){ var s=Array.isArray(a)?a.slice():[]; (Array.isArray(b)?b:[]).forEach(function(x){ if(s.indexOf(x)<0)s.push(x); }); return s; }
+  function unionFavs(cf,lf){ if(!cf&&!lf)return undefined; cf=cf||{}; lf=lf||{};
+    return { units:unionArr(cf.units,lf.units), contingency:unionArr(cf.contingency,lf.contingency), operations:unionArr(cf.operations,lf.operations) }; }
+  function baseGet(){ try{ return (typeof syncBaseGet==='function')?syncBaseGet():{}; }catch(e){ return {}; } }
+  function baseSet(o){ try{ if(typeof syncBaseSet==='function') syncBaseSet(o); }catch(e){} }
+  /* 3-way merge (S1/S2): cloud is the base truth; overlay ONLY the keys this device changed since the last
+     sync (SESSION vs the persisted base) so a stale preloaded mirror never clobbers a newer device; a key
+     deleted locally is dropped from cloud; favourites are ALWAYS unioned so no star is ever lost. */
+  function reconcile(cloud, base, local){
+    var merged={}, k, changed=false;
+    for(k in cloud) merged[k]=cloud[k];
+    for(k in local){ if(k==='favs')continue; if(JSON.stringify(local[k])!==JSON.stringify(base[k])){ merged[k]=local[k]; changed=true; } }
+    for(k in base){ if(k!=='favs' && !(k in local) && (k in merged)){ delete merged[k]; changed=true; } }
+    var uf=unionFavs(cloud.favs, local.favs); if(uf!==undefined) merged.favs=uf;
+    return merged;
+  }
+  function adopt(obj){                     // replace SESSION with obj; persist mirror+base+dv; repaint; return changed
     var before=JSON.stringify(SESSION||{});
     SESSION = obj || {};
-    try{ if(ACCOUNT){ localStorage.setItem(SAVE_LOCAL, JSON.stringify(SESSION)); } }catch(e){}
+    try{ if(ACCOUNT){ localStorage.setItem(SAVE_LOCAL, JSON.stringify(SESSION)); if(typeof SAVE_DV!=='undefined') localStorage.setItem(SAVE_DV, String(DATA_VERSION)); } }catch(e){}
     var changed = JSON.stringify(SESSION)!==before;
     if(changed){ try{ rebuildAll(); }catch(e){} }
     return changed;
@@ -76,7 +90,7 @@
     signInGoogle: function(){ toast("Sign-in unavailable"); },
     signInApple:  function(){ toast("Sign-in unavailable"); },
     signOutCloud: function(){},
-    deleteAccount:function(){}
+    deleteAccount:function(){ toast("Not ready yet — try again in a moment"); }
   };
   window.__mercsSync = api;
 
@@ -107,10 +121,21 @@
     function setStatus(t){ api.statusText=t; var e=document.getElementById('acSync'); if(e)e.textContent=t; }
     function pushMap(map){
       if(!currentUser)return;
-      fsMod.setDoc(docRef(currentUser.uid), { blob:JSON.stringify(map), updatedAt:Date.now(), device:deviceId() }).catch(function(){});
+      var pushed = JSON.parse(JSON.stringify(map||{}));   // FREEZE what we push: a later in-place SESSION edit must not retro-alter the confirmed base
+      fsMod.setDoc(docRef(currentUser.uid), { blob:JSON.stringify(pushed), updatedAt:Date.now(), device:deviceId() })
+        .then(function(){ baseSet(pushed); })   // the pushed snapshot is now the confirmed cloud state → new base (any later edit stays a delta)
+        .catch(function(){});
     }
     function pushNow(){ pushMap(snapshotLocal()); }
     api.schedulePush = function(){ if(!currentUser)return; if(pushTimer)clearTimeout(pushTimer); pushTimer=setTimeout(pushNow,1500); };
+    function syncReconcile(cloudBlob){
+      if(keyCount(cloudBlob)===0){ if(hasLocalData()) pushMap(snapshotLocal()); return; }  // seed empty cloud; pushMap advances base only when the push is confirmed
+      var merged = reconcile(cloudBlob, baseGet(), snapshotLocal());
+      var changed = JSON.stringify(merged)!==JSON.stringify(cloudBlob);
+      adopt(merged);                                  // SESSION + mirror + repaint (base left untouched)
+      if(changed) pushMap(merged);                    // unconfirmed local delta — base advances ONLY when this push lands (else the edit stays a delta and re-pushes; no loss on a failed push)
+      else baseSet(merged);                           // merged == cloud (server-confirmed) — safe to set base now
+    }
 
     /* ── sign-in entrypoints — native bridge in the wrapper, popup on web ──── */
     api.signInGoogle = function(){
@@ -153,6 +178,8 @@
       }).then(function(){
         try{ localStorage.removeItem(SAVE_LOCAL); }catch(e){}
         try{ localStorage.removeItem(SAVE_MODE); }catch(e){}
+        try{ localStorage.removeItem(SAVE_ACCT); }catch(e){}
+        try{ localStorage.removeItem(SAVE_BASE); }catch(e){}
         SESSION={}; ACCOUNT=null;
         try{ updateAccountUI(); rebuildAll(); }catch(e){}
         toast('Account and data deleted');
@@ -177,6 +204,7 @@
         var pid = (user.providerData && user.providerData[0] && user.providerData[0].providerId) || '';
         ACCOUNT = { mode:'cloud', uid:user.uid, provider:pid, name:user.displayName||'', email:user.email||'', photo:user.photoURL||'' };
         try{ localStorage.setItem(SAVE_MODE,'cloud'); }catch(e){}
+        try{ localStorage.setItem(SAVE_ACCT, JSON.stringify({name:ACCOUNT.name,email:ACCOUNT.email,photo:ACCOUNT.photo})); }catch(e){}   // S1: cache label for offline display
         try{ updateAccountUI(); }catch(e){}
         setStatus('Synced as ' + (user.email || user.displayName || 'your account'));
         try{ var _pm=document.getElementById('pop'); if(_pm && _pm.classList.contains('open') && typeof popClose==='function') popClose(); }catch(e){}
@@ -186,14 +214,7 @@
           var data = snap.exists() ? snap.data() : null;
           var cloudBlob = {};
           try{ cloudBlob = (data && data.blob) ? JSON.parse(data.blob) : {}; }catch(e){ cloudBlob = {}; }
-          var decision = decideSync(keyCount(cloudBlob), hasLocalData());
-          if(decision==='push' || decision==='noop'){ pushNow(); }
-          else if(decision==='pull'){ adopt(cloudBlob); }
-          else { // merge (union, local wins), then push if it changed the cloud
-            var merged = mergeMaps(cloudBlob, snapshotLocal());
-            adopt(merged);
-            if(JSON.stringify(merged)!==JSON.stringify(cloudBlob)) pushMap(merged);
-          }
+          syncReconcile(cloudBlob);
           // live updates from this user's OTHER devices
           unsub = fsMod.onSnapshot(docRef(user.uid), function(s){
             if(!s.exists())return;
@@ -201,7 +222,7 @@
             if(!dd || !dd.blob) return;
             if(dd.device === deviceId()) return;      // ignore our own echo
             var rb={}; try{ rb=JSON.parse(dd.blob); }catch(e){ return; }
-            adopt(rb);
+            syncReconcile(rb);                        // 3-way merge (keeps this device's unpushed edits), not a blind adopt
           });
         }).catch(function(){ setStatus('Sync error - will retry on next change'); });
 
@@ -209,6 +230,8 @@
         if(ACCOUNT && ACCOUNT.mode==='cloud'){
           ACCOUNT=null;
           try{ localStorage.removeItem(SAVE_MODE); }catch(e){}
+          try{ localStorage.removeItem(SAVE_ACCT); }catch(e){}
+          try{ localStorage.removeItem(SAVE_BASE); }catch(e){}
           try{ updateAccountUI(); rebuildAll(); }catch(e){}
           toast('Signed out');
         }
@@ -220,6 +243,7 @@
   }).catch(function(){
     // Firebase modules couldn't load (offline or blocked) — degrade gracefully.
     api.signInGoogle = api.signInApple = function(){ toast('Sign-in needs a connection'); };
+    api.signOutCloud = api.deleteAccount = function(){ toast('Connect to the internet to manage your account'); };  // F3: no silent dead buttons offline
     api.statusText = 'Cloud sync unavailable offline';
   });
 })();

@@ -91,23 +91,40 @@ let SESSION={}; let ACCOUNT=null;
 const SAVE_LOCAL="mercs.v1.session";   // single local blob: device save + cloud mirror
 const SAVE_MODE ="mercs.v1.mode";      // 'device' | 'cloud' — remembered to resume on next launch
 const SAVE_DEVICE="mercs.v1.device";   // stable per-device id (live-sync echo guard)
+const SAVE_ACCT ="mercs.v1.acct";      // cached cloud account label for offline display (S1)
+const SAVE_BASE ="mercs.v1.base";      // last SESSION confirmed in sync with cloud — the 3-way merge base (S1/S2)
+const SAVE_DV   ="mercs.v1.dv";        // data-schema version stamp guarding index-based saves (S4)
+const DATA_VERSION=1;                  // bump when DATA arrays are reordered / units removed
+function syncBaseGet(){ try{return JSON.parse(localStorage.getItem(SAVE_BASE)||'{}')||{};}catch(e){return {};} }
+function syncBaseSet(o){ try{localStorage.setItem(SAVE_BASE,JSON.stringify(o||{}));}catch(e){} }
 const Store={
   get(k,d){return (k in SESSION)?SESSION[k]:d;},
   set(k,v){SESSION[k]=v; persistLocal(); if(window.__mercsSync)window.__mercsSync.schedulePush();},
   del(k){ if(k in SESSION)delete SESSION[k]; persistLocal(); if(window.__mercsSync)window.__mercsSync.schedulePush();}
 };
-function persistLocal(){ if(ACCOUNT){ try{localStorage.setItem(SAVE_LOCAL,JSON.stringify(SESSION));}catch(e){} } }
-function loadLocalSession(){ try{const raw=localStorage.getItem(SAVE_LOCAL);SESSION=(raw?JSON.parse(raw):null)||{};}catch(e){SESSION={};} }
+function persistLocal(){ if(ACCOUNT){ try{localStorage.setItem(SAVE_LOCAL,JSON.stringify(SESSION));localStorage.setItem(SAVE_DV,String(DATA_VERSION));}catch(e){} } }
+function loadLocalSession(){ try{const raw=localStorage.getItem(SAVE_LOCAL);SESSION=(raw?JSON.parse(raw):null)||{};}catch(e){SESSION={};}
+  /* S4: if the saved blob predates a DATA reorder/removal, drop index-addressed saves so they can't silently repoint. id-based favs are stable and kept. */
+  try{const dv=localStorage.getItem(SAVE_DV); if(dv!=null && +dv!==DATA_VERSION){ ["strikeTeam","roundRoster","roundNo","dmgSquad","cmpSel","opBrowseIdx","opSetupIdx"].forEach(k=>{ if(k in SESSION)delete SESSION[k]; }); }}catch(e){} }
 function hasLocalData(){ try{return !!(SESSION&&Object.keys(SESSION).length);}catch(e){return false;} }
 /* resume the saved mode on launch (cloud is re-established async by auth.js onAuthStateChanged) */
 function restoreSession(){ let m=null; try{m=localStorage.getItem(SAVE_MODE);}catch(e){}
-  if(m==='device'){ ACCOUNT={mode:'device'}; loadLocalSession(); } }
+  if(m==='device'){ ACCOUNT={mode:'device'}; loadLocalSession(); }
+  else if(m==='cloud'){ /* S1: show the cloud mirror immediately (esp. offline); auth.js reconciles when Firebase loads */
+    ACCOUNT={mode:'cloud',pending:true};
+    try{const a=JSON.parse(localStorage.getItem(SAVE_ACCT)||'null'); if(a){ACCOUNT.name=a.name||'';ACCOUNT.email=a.email||'';ACCOUNT.photo=a.photo||'';}}catch(e){}
+    loadLocalSession();
+    try{ if(localStorage.getItem(SAVE_BASE)==null) syncBaseSet(SESSION); }catch(e){}  /* first run after this ships: assume the mirror was last in sync, so untouched keys defer to cloud */
+  } }
 /* device-only save (no cloud) — keeps any current in-memory guest selections */
 function signInDevice(){ if(!hasLocalData())loadLocalSession(); ACCOUNT={mode:'device'};
   try{localStorage.setItem(SAVE_MODE,'device');}catch(e){} persistLocal(); updateAccountUI(); rebuildAll(); toast("Saving on this device"); }
 /* sign out of whichever mode is active */
 function signOut(){
-  if(ACCOUNT&&ACCOUNT.mode==='cloud'&&window.__mercsSync){ window.__mercsSync.signOutCloud(); return; }
+  if(ACCOUNT&&ACCOUNT.mode==='cloud'){
+    if(ACCOUNT.pending){ toast("Sign-out isn't ready yet — try again in a moment"); return; }  /* S1/F3: cloud not yet established this launch (offline or still loading) — don't silently no-op */
+    if(window.__mercsSync){ window.__mercsSync.signOutCloud(); return; }
+  }
   ACCOUNT=null; try{localStorage.removeItem(SAVE_MODE);}catch(e){}
   updateAccountUI(); toast("Signed out — this session won't be saved");
 }
@@ -156,8 +173,10 @@ function heatColor(g){if(g==null)return "var(--muted)";
   return `rgb(${c[0]},${c[1]},${c[2]})`;}
 
 /* ---------- popover (.pop/.popcard) ---------- */
-function popOpen(html){$("#popcard").innerHTML='<button class="popx" aria-label="Close" onclick="popClose()">&#10005;</button>'+html;$("#pop").classList.add("open");}
-function popClose(){$("#pop").classList.remove("open");}
+function popOpen(html){$("#popcard").innerHTML='<button class="popx" aria-label="Close" onclick="popClose()">&#10005;</button>'+html;const p=$("#pop");p.classList.add("open");
+  if(!p._pushed){try{history.pushState({pop:true},"","#card");}catch(e){}p._pushed=true;}}   /* U2: own history entry so Back dismisses the popover, not the tab/tool under it */
+function popClose(){const p=$("#pop");p.classList.remove("open");
+  if(p._pushed){p._pushed=false; if(location.hash==="#card"){try{history.replaceState({tab:CURRENT_TAB},"","#"+(CURRENT_TAB||"home"));}catch(e){}}}}
 function statPop(k){const t=TERM[k];
   popOpen(`<h4>${tn(t.term)} <span class="muted small" translate="no">(${k})</span></h4><div>${esc(t.def)}</div>
     <span class="bw">${t.betterWhen==="lower"?"&#9660; Lower is better":"&#9650; Higher is better"}</span>
@@ -350,7 +369,9 @@ const TABS=[
 const TAB_IDS=TABS.map(t=>t.id);
 const built={};
 let CURRENT_TAB=null;
-function rebuildAll(){Object.keys(built).forEach(k=>{delete built[k];});TAB_IDS.forEach(id=>{const p=$("#panel-"+id);if(p)p.innerHTML="";});if(CURRENT_TAB)ensureBuilt(CURRENT_TAB);}
+function rebuildAll(){Object.keys(built).forEach(k=>{delete built[k];});TAB_IDS.forEach(id=>{const p=$("#panel-"+id);if(p)p.innerHTML="";});if(CURRENT_TAB)ensureBuilt(CURRENT_TAB);
+  /* S3: an open Field Tool holds its own closure state; refresh it from the (possibly just-synced) SESSION so a remote update can't be clobbered by a stale tool save */
+  try{ if(TOOL_CUR && $("#tools") && $("#tools").classList.contains("open") && typeof openTool==="function") openTool(TOOL_CUR); }catch(e){} }
 /* A deep link changes the stored selection (faction, operation, rules mode) and then
    navigates. ensureBuilt() is a build-ONCE cache, so without this the target panel keeps
    whatever it rendered earlier and the linked record is not in the DOM to reveal or scroll
@@ -368,10 +389,10 @@ function navTo(id,opts){opts=opts||{};
 }
 window.navTo=navTo;
 window.addEventListener("popstate",e=>{
-  if($("#search").classList.contains("open")){closeSearch();return;}
   if($("#navMenu")&&$("#navMenu").classList.contains("open")){closeNav();return;}
+  if($("#pop").classList.contains("open")){popClose();return;}   /* U1: popover is topmost (z-index 80) — dismiss it before tools/search */
+  if($("#search").classList.contains("open")){closeSearch();return;}
   if($("#tools").classList.contains("open")){closeTools();return;}
-  if($("#pop").classList.contains("open")){popClose();return;}
   const id=(location.hash||"#home").slice(1);navTo(id,{fromPopstate:true});
 });
 
@@ -799,6 +820,7 @@ const TOOLDEFS=[
 ];
 let TOOL_CUR=null;
 function openToolsMenu(){
+  TOOL_CUR=null;   /* S3-fix: the tool PICKER has no active tool, so a background rebuildAll must not re-open the last one */
   $("#toolsTitle").textContent="Field Tools";
   $("#toolsBody").innerHTML=`<p class="vsub" style="margin:.2rem 0 .8rem">Seven battlefield tools plus your Favorites — usable over any screen.</p>
     <div class="toolmenu">${TOOLDEFS.map(t=>`<button class="toolcard" data-tool="${t.id}"><span class="ico">${t.ico}</span><div><h3 translate="no">${esc(t.t)}</h3><p>${esc(t.d)}</p></div><span class="ar">&#8250;</span></button>`).join("")}</div>`;
@@ -1731,6 +1753,8 @@ function reloadWhenSafe(){
       if(ae&&(ae.tagName==="INPUT"||ae.tagName==="TEXTAREA"||ae.isContentEditable)) return false; /* don't wipe a half-typed search */
       const pop=document.getElementById("pop");
       if(pop&&pop.classList.contains("open")) return false; /* don't slam an open card/modal shut */
+      const tools=document.getElementById("tools");
+      if(tools&&tools.classList.contains("open")) return false; /* U3: don't wipe an in-progress Field Tool session (esp. guest, memory-only) */
     }catch(e){}
     return true;
   };
@@ -1875,9 +1899,9 @@ function boot(){
   history.replaceState({tab:start},"","#"+start);
   navTo(start,{fromPopstate:true});
   initTheme();
+  initLaunchSplash();     /* U4: dismiss the splash BEFORE SW/offline init so a throw there can't leave it covering the app */
   registerSW();
   initOffline();
-  initLaunchSplash();
   initSyncTip();
   xlRestore();            /* re-apply a previously chosen language if its pack is already on-device */
 }
