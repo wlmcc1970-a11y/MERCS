@@ -1,7 +1,7 @@
 {
   "name": "MERCS Companion",
   "short_name": "MERCS",
-  "description": "The official MERCS 2.5 field companion — units, contingency cards, corporate traits, operations, rules, modifiers, keywords and six battlefield tools.",
+  "description": "The official MERCS 2.5 field companion: units, contingency cards, corporate traits, operations, rules, modifiers, keywords and six battlefield tools.",
   "id": "./",
   "start_url": "./",
   "scope": "./",
