@@ -90,7 +90,7 @@
     signInGoogle: function(){ toast("Sign-in unavailable"); },
     signInApple:  function(){ toast("Sign-in unavailable"); },
     signOutCloud: function(){},
-    deleteAccount:function(){ toast("Not ready yet — try again in a moment"); }
+    deleteAccount:function(){ toast("Not ready yet. Try again in a moment"); }
   };
   window.__mercsSync = api;
 

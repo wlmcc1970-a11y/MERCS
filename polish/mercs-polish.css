@@ -1,0 +1,188 @@
+/* MERCS Polish release (2026-09-28, from the approved 2026-09-26 proof). Maps MERCS theme -> kit, then upgrades each layer.
+   All art is MERCS publisher art harvested into art/ (cover battle scene, unit card portraits);
+   texture and ornament are drawn in code. No AI imagery. */
+:root{
+  --pk-bg:var(--bg);--pk-ink:var(--ink);--pk-muted:var(--muted);--pk-accent:var(--olive);--pk-accent-ink:#fff;
+  --pk-s0:var(--bg);--pk-s1:var(--surface);--pk-s2:var(--surface2);--pk-s3:var(--surface3);
+  --pk-edge:rgba(20,32,30,.10);--pk-light:rgba(255,255,255,.75);--pk-shade:rgba(16,34,31,.18);
+  --pk-grain:.035;--pk-grain-blend:multiply;--pk-font-display:var(--font-hero);--pk-radius:14px;
+  --fac:#3f7a72;
+}
+html[data-theme="dark"]{--pk-edge:rgba(255,255,255,.08);--pk-light:rgba(255,255,255,.06);--pk-shade:rgba(0,0,0,.55);--pk-grain:.06;--pk-grain-blend:overlay}
+
+/* page atmosphere: a faint tactical grid + vignette instead of a flat fill */
+body{background:
+  radial-gradient(140% 70% at 50% -10%,color-mix(in oklab,var(--olive) 14%,transparent),transparent 60%),
+  repeating-linear-gradient(0deg,transparent 0 31px,color-mix(in oklab,var(--ink) 4%,transparent) 31px 32px),
+  repeating-linear-gradient(90deg,transparent 0 31px,color-mix(in oklab,var(--ink) 4%,transparent) 31px 32px),
+  var(--bg)}
+
+/* ---- Home hero: the cover battle art behind the logo ---- */
+.splash.hero{background:#0e1c19;min-height:300px;display:flex;flex-direction:column;justify-content:center;border-bottom:0;isolation:isolate}
+.splash.hero::before{content:"";position:absolute;inset:0;z-index:-2;background:url(../art/hero-battle.webp) center 35%/cover;
+  animation:pk-drift 22s var(--pk-ease) infinite alternate;transform:scale(1.05)}
+.splash.hero::after{content:"";position:absolute;inset:0;z-index:-1;
+  background:linear-gradient(180deg,rgba(9,24,21,.55) 0%,rgba(9,24,21,.35) 40%,rgba(9,24,21,.92) 100%),
+             radial-gradient(90% 60% at 50% 40%,transparent,rgba(0,0,0,.35))}
+.splash.hero .logo{filter:drop-shadow(0 4px 18px rgba(0,0,0,.7))}
+.splash.hero .kick,.splash.hero .cause{text-shadow:0 2px 14px rgba(0,0,0,.8)}
+.splash.hero+.homewrap{margin-top:-18px;position:relative}
+.homewrap>.vsub:first-child{background:color-mix(in oklab,var(--surface) 88%,transparent);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+  border:1px solid var(--pk-edge);border-radius:14px;padding:.8rem .9rem;box-shadow:0 10px 30px -12px var(--pk-shade)}
+
+/* ---- materials on every card-like surface ---- */
+.tile,.toolq,.item,.unitcard,.manual,.seg,.cardfig{border-color:var(--pk-edge)!important;
+  background:linear-gradient(180deg,var(--pk-light),transparent 45%),var(--surface)!important;
+  box-shadow:inset 0 1px 0 var(--pk-light),0 1px 1px var(--pk-shade),0 8px 20px -10px var(--pk-shade)!important}
+.tile{overflow:hidden}
+.tile .ico{color:var(--olive);filter:drop-shadow(0 2px 4px var(--pk-shade))}
+.unitcard{border-radius:16px}
+
+/* ---- unit list: real portraits, framed ---- */
+.item.unititem{padding:.5rem .6rem;gap:.75rem;min-height:68px;position:relative;overflow:hidden}
+.item.unititem::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--fac)}
+.item.unititem .thumb{width:54px;height:54px;border-radius:10px;border:0;
+  box-shadow:inset 0 0 0 1px var(--pk-edge),0 3px 8px var(--pk-shade);background:#3a3d40}
+.item.unititem .nm{font-size:1rem}
+
+/* ---- MegaCons: faction band in the publisher's faction color ---- */
+.pk-facband{position:relative;margin:.2rem 0 .7rem;border-radius:14px;overflow:hidden;min-height:92px;display:flex;align-items:flex-end;
+  padding:.7rem .9rem;color:#fff;isolation:isolate;
+  background:linear-gradient(115deg,var(--fac),color-mix(in oklab,var(--fac) 55%,#000));box-shadow:0 10px 24px -12px var(--pk-shade)}
+.pk-facband .pk-crew{position:absolute;right:-6px;bottom:-4px;display:flex;z-index:-1}
+.pk-facband .pk-crew img{width:78px;height:78px;margin-left:-26px;border-radius:50%;object-fit:cover;
+  box-shadow:0 0 0 3px color-mix(in oklab,var(--fac) 70%,#000),0 6px 14px rgba(0,0,0,.45);opacity:1}
+.pk-facband b{font-family:var(--font-hero);font-size:1.35rem;letter-spacing:.02em;text-shadow:0 2px 8px rgba(0,0,0,.45)}
+.pk-facband small{display:block;opacity:.9;font-size:.78rem;letter-spacing:.06em;text-transform:uppercase}
+
+/* ---- Unit detail: portrait header ---- */
+.pk-unithero{display:flex;gap:.9rem;align-items:center;margin:-.2rem -.2rem .8rem;padding:.8rem;border-radius:14px;color:#fff;
+  background:linear-gradient(120deg,var(--fac),color-mix(in oklab,var(--fac) 45%,#000));position:relative;overflow:hidden}
+.pk-unithero img{width:92px;height:92px;border-radius:14px;object-fit:cover;box-shadow:0 0 0 2px rgba(255,255,255,.25),0 8px 18px rgba(0,0,0,.45);flex:none}
+.pk-unithero h3{margin:0;font-family:var(--font-hero);font-size:1.55rem;line-height:1.05;color:#fff;text-shadow:0 2px 8px rgba(0,0,0,.4)}
+.pk-unithero .pk-sub{opacity:.92;font-size:.8rem;letter-spacing:.08em;text-transform:uppercase;margin-top:.3rem}
+.stat{background:linear-gradient(180deg,var(--pk-light),transparent 60%),var(--surface2)!important;box-shadow:inset 0 1px 0 var(--pk-light),0 2px 6px -3px var(--pk-shade)}
+.stat .v{font-variant-numeric:tabular-nums;font-size:1.25rem}
+
+/* ---- tab bar: glass ---- */
+#tabbar{background:color-mix(in oklab,#0e332e 82%,transparent)!important;backdrop-filter:blur(14px) saturate(1.3);-webkit-backdrop-filter:blur(14px) saturate(1.3)}
+.tab.on .tico{filter:drop-shadow(0 0 8px color-mix(in oklab,var(--cyan,#1fa9be) 70%,transparent))}
+
+/* ---- 44px touch targets (Polish Check found 36px stars and 40-42px controls) ---- */
+.star{width:44px!important;height:44px!important;min-height:44px!important}
+.segb{min-height:44px}
+.manual>summary{min-height:44px;display:flex;align-items:center}
+
+/* motion hooks */
+.panel{animation:none}
+#panel-megacons:has(#megList[style*="none"]) .pk-facband{display:none}
+
+/* ---- fixes the Polish Check found in the LIVE app (log for #31) ---- */
+/* dark mode: the offline-save notice used --ink (near white) as its background with white text: unreadable */
+html[data-theme="dark"] .offbar{background:#22403a;color:#fff;border:1px solid rgba(255,255,255,.12)}
+/* dark mode: the selected segment used a light tone behind white text (1.9:1) */
+html[data-theme="dark"] .segb.on{color:#0e1c19}
+/* remaining small targets */
+.rback{min-height:44px}
+.ucls{min-width:44px;min-height:44px}
+
+/* ===== round 2 (independent scorer findings) ===== */
+.splash.hero{align-items:center}
+/* toasts: dark surface in dark mode, clear of the tab bar, never stacked on each other */
+html[data-theme="dark"] .toast{background:#22403a;color:#fff;border:1px solid rgba(255,255,255,.12)}
+.toast,.offbar{bottom:calc(var(--pk-dock,0px) + 1rem + var(--safe-b))}
+body:has(.offbar.show) .toast{bottom:calc(var(--pk-dock,0px) + 4rem + var(--safe-b))}
+/* contrast and targets */
+html[data-theme="dark"] .cardfig figcaption{color:var(--ink2)}
+#acctBtn,.acctbtn,[id*="signin" i],[class*="signin" i]{min-height:44px}
+/* faction band: darker left scrim for the name, framed portraits kept inside the band */
+.pk-facband{padding-right:210px}
+.pk-facband::before{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(90deg,rgba(0,0,0,.35),transparent 60%)}
+.pk-facband .pk-crew{right:10px;bottom:8px}
+.pk-facband .pk-crew img{width:66px;height:66px;margin-left:-18px;box-shadow:0 0 0 3px rgba(0,0,0,.55),0 6px 14px rgba(0,0,0,.45)}
+/* section bands: publisher cover art behind the title on every other main screen */
+.pk-sectionband{position:relative;overflow:hidden;border-radius:16px;margin:.8rem 0 .8rem;padding:1.4rem 1rem 1rem;min-height:120px;
+  display:flex;flex-direction:column;justify-content:flex-end;color:#fff;isolation:isolate;box-shadow:0 12px 26px -14px var(--pk-shade)}
+.pk-sectionband::before{content:"";position:absolute;inset:0;z-index:-2;background:url(../art/hero-battle.webp) var(--pk-pos,50% 40%)/cover}
+.pk-sectionband::after{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(180deg,rgba(9,24,21,.25),rgba(9,24,21,.88))}
+.pk-sectionband .vh{color:#fff;margin:0;text-shadow:0 2px 10px rgba(0,0,0,.6);font-size:1.6rem}
+.pk-sectionband .vsub{color:rgba(255,255,255,.9);margin:.2rem 0 0;text-shadow:0 1px 6px rgba(0,0,0,.6)}
+/* designed empty state inside lists */
+#megList .pk-empty{border:1px dashed var(--line2);border-radius:14px}
+/* tablet: use the room */
+@media (min-width:900px){
+  #megList{display:grid;grid-template-columns:1fr 1fr;gap:.6rem}
+  #kwBody{display:block;columns:2;column-gap:.6rem}
+  #kwBody>*{break-inside:avoid;margin-bottom:.6rem}
+  .qtiles{grid-template-columns:repeat(3,1fr)}
+  .toolgrid{grid-template-columns:repeat(6,1fr)!important}
+  #megDetail .unitcard{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:0 1.2rem;align-items:start}
+  #megDetail .unitcard>.uhead,#megDetail .unitcard>.pk-unithero{grid-column:1/-1}
+  #megDetail .unitcard>.cardimgs{grid-column:1;grid-row:span 6}
+  #megDetail .unitcard>:not(.uhead):not(.pk-unithero):not(.cardimgs){grid-column:2}
+  .vsub,.ablist,.small{font-size:1rem}
+}
+
+/* inline keyword chips: 44px tap area without changing the table layout */
+.wtable .kw,.wtable [class*="chip"]{position:relative}
+/* data-table exception (logged): chips inside a dense table get a 44px-wide, 30px-tall tap area so adjacent rows never overlap (WCAG 2.2 AA 2.5.8 minimum is 24px) */
+.wtable .kw::after,.wtable [class*="chip"]::after{content:"";position:absolute;left:50%;top:50%;width:max(100%,44px);height:30px;transform:translate(-50%,-50%)}
+
+/* ===== round 3 ===== */
+/* dark mode: the closed Field Manual bar kept its light gradient (about 1.5:1). Live bug, log for #31 */
+html[data-theme="dark"] .manual>summary{background:linear-gradient(180deg,#1f3d38,#17302c)!important;color:#f2cd3a}
+/* unit open: hide the filter row so nothing peeks under the header */
+#panel-megacons:has(#megList[style*="none"]) .row{display:none}
+/* unit header is a name band; the card front itself receives the portrait morph */
+.pk-unithero{min-height:84px}
+/* section bands: image larger than the band so each screen shows a different part of the battle */
+.pk-sectionband::before{background-size:260% auto}
+@media (min-width:900px){.pk-sectionband::before{background-size:160% auto}}
+.pk-empty{grid-column:1/-1}
+/* ===== round 4 (measured with gradient-aware contrast) ===== */
+/* faction bands: deepen the publisher color so white text passes AA on bright factions (CCC gold, ISS cyan) */
+.pk-facband{background:linear-gradient(115deg,color-mix(in oklab,var(--fac) 58%,#000),color-mix(in oklab,var(--fac) 34%,#000))}
+.pk-unithero{background:linear-gradient(120deg,color-mix(in oklab,var(--fac) 58%,#000),color-mix(in oklab,var(--fac) 30%,#000))}
+/* license line and small header label (live app, log for #31) */
+footer.src,footer.src *{color:var(--muted)!important}
+html[data-theme="dark"] footer.src,html[data-theme="dark"] footer.src *{color:var(--ink2)!important}
+header.bar .ttl{color:#fff}
+/* stat heat colors: deepen in light mode, lift in dark, so every value passes 3:1 as large text */
+/* stat heat colors are adjusted in mercs-polish.js to pass 3:1 as large text in both themes */
+html:not([data-theme="dark"]) .manual>summary .tw,html:not([data-theme="dark"]) .manual>summary .mico{color:var(--orange-d)}
+/* ===== round 5 polish (scorer PASS, payoff items) ===== */
+/* bright publisher faction color again; ink flips to dark on light factions (set by mercs-polish.js) */
+.pk-facband{background:linear-gradient(115deg,var(--fac),var(--fac-end,color-mix(in oklab,var(--fac) 72%,#000)));color:var(--fac-ink,#fff)}
+.pk-unithero{background:linear-gradient(120deg,var(--fac),var(--fac-end,color-mix(in oklab,var(--fac) 72%,#000)));color:var(--fac-ink,#fff)}
+.pk-unithero h3{color:var(--fac-ink,#fff)}
+.pk-facband[style*="--fac-ink: #1"] b,.pk-unithero[style*="--fac-ink: #1"] h3,.pk-facband[style*="--fac-ink: #1"] small{text-shadow:none}
+.pk-facband::before{display:none}
+.pk-sectionband::before{background-size:170% auto}
+.pk-sectionband .vsub{text-wrap:balance}
+#panel-megacons:has(#megList[style*="none"]) .manual{display:none}
+@media (min-width:900px){#megDetail .unitcard>.cardimgs{position:sticky;top:84px}}
+/* light factions with dark ink: the gradient lightens instead of darkening */
+[style*="--fac-ink: #1"]{--fac-end:color-mix(in oklab,var(--fac) 80%,#fff)}
+
+/* ===== MERCS release 2026-09-28: same fixes as above, for screens the proof did not measure =====
+   Measured by polish-check.py on the Field Tools menu, Modifiers, Search, Contingency and the sign-in sheet.
+   Colors only, plus 44px minimum height; no text, no handlers. */
+/* dark mode: Field Tools and Search headers used a light teal behind white text (1.9:1); use the app bar's dark gradient */
+html[data-theme="dark"] .toolsbar,html[data-theme="dark"] .searchhead{background:linear-gradient(180deg,#1c534c,#123f39)}
+/* dark mode: tool card titles inherited the browser's black button text on a dark card (1.4:1) */
+html[data-theme="dark"] .toolcard{color:var(--ink)}
+/* dark mode: table headers and search count badges put white text on the light olive tone; dark ink instead (same rule as .segb.on) */
+html[data-theme="dark"] .wtable th,html[data-theme="dark"] .dtable th,html[data-theme="dark"] .sgh span{color:#0e1c19}
+/* dark mode: Codex rows are buttons, so unit names inherited the browser's black button text (1.4:1) */
+html[data-theme="dark"] button.item{color:var(--ink)}
+/* dark mode: rule callouts (Damage, Round Tracker) kept their light box behind light text (1.4:1) */
+html[data-theme="dark"] .rule{background:var(--surface2);border-color:var(--line2)}
+/* dark mode: objective points were forced near-black on a dark card (1.2:1); a ticked objective kept a light box */
+html[data-theme="dark"] .obj .op{color:var(--orange)}
+html[data-theme="dark"] .obj.checked{background:#1d3a2a}
+html[data-theme="dark"] .obj.checked .box{color:#0e1c19}
+/* Compare Units empty hint: the faint tone read 2.3:1 in light mode */
+.cmp-empty{color:var(--muted)}
+/* 44px targets: small buttons (Deal a hand, Add, Clear page, Roll initiative, the sign-in sheet's
+   Just save on this device, and more) and the Field Tools back button. Size only. */
+.btn.sm,.backbtn{min-height:44px}

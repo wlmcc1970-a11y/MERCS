@@ -1,0 +1,148 @@
+/* DigiRune Polish Kit v1.0.1 (2026-09-26) - pk.css
+   The Premium Polish Standard, as reusable code. Every value reads from an app's own theme
+   through the --pk-* map (see pk-map.example.css). No value here is publisher art; all texture
+   and ornament is drawn in code. Inline into the app's single file at build time, or link it.
+   Layers: 1 materials/depth  2 texture  3 art frames  4 icons (app-supplied)  5 type scale
+   6 motion  7 press feedback  8 haptics (pk.js)  9 skeletons  10 empty  11 offline  12 splash
+   13 images that never show broken  14 reduced motion and contrast safety. */
+
+:root{
+  /* ---- map these from the app theme (fallbacks are neutral) ---- */
+  --pk-bg:#101214; --pk-ink:#eceae4; --pk-muted:#a6a39a;
+  --pk-accent:#d4b84a; --pk-accent-ink:#1a1606;
+  --pk-s0:#15181b; --pk-s1:#1b1f23; --pk-s2:#22272c; --pk-s3:#2a3036;
+  --pk-edge:rgba(255,255,255,.10);     /* hairline border */
+  --pk-light:rgba(255,255,255,.09);    /* top light catch */
+  --pk-shade:rgba(0,0,0,.45);          /* cast shadow color */
+  --pk-grain:.05;                      /* texture strength, 0 to disable */
+  --pk-grain-blend:overlay;
+  --pk-radius:14px; --pk-radius-s:10px;
+  --pk-font-display:inherit; --pk-font-body:inherit;
+  /* ---- type scale (fluid, phone to tablet) ---- */
+  --pk-fs-xs:clamp(.72rem,.70rem + .1vw,.78rem);
+  --pk-fs-s:clamp(.84rem,.82rem + .12vw,.9rem);
+  --pk-fs-m:clamp(.98rem,.95rem + .15vw,1.06rem);
+  --pk-fs-l:clamp(1.14rem,1.08rem + .3vw,1.3rem);
+  --pk-fs-xl:clamp(1.4rem,1.28rem + .6vw,1.75rem);
+  --pk-fs-2xl:clamp(1.8rem,1.6rem + 1vw,2.4rem);
+  --pk-fs-3xl:clamp(2.3rem,2rem + 1.6vw,3.2rem);
+  /* ---- motion ---- */
+  --pk-ease:cubic-bezier(.2,.8,.2,1); --pk-ease-in:cubic-bezier(.4,0,1,1);
+  --pk-d1:120ms; --pk-d2:240ms; --pk-d3:380ms;
+}
+
+/* ============ 1. Materials and depth: four surface levels ============ */
+.pk-s0,.pk-s1,.pk-s2,.pk-s3{position:relative;border-radius:var(--pk-radius);border:1px solid var(--pk-edge)}
+.pk-s0{background:var(--pk-s0);box-shadow:inset 0 1px 0 var(--pk-light)}
+.pk-s1{background:linear-gradient(180deg,var(--pk-light),transparent 42%),var(--pk-s1);
+  box-shadow:inset 0 1px 0 var(--pk-light),0 1px 1px var(--pk-shade),0 6px 16px -8px var(--pk-shade)}
+.pk-s2{background:linear-gradient(180deg,var(--pk-light),transparent 50%),var(--pk-s2);
+  box-shadow:inset 0 1px 0 var(--pk-light),0 2px 3px var(--pk-shade),0 12px 28px -12px var(--pk-shade)}
+.pk-s3{background:linear-gradient(180deg,var(--pk-light),transparent 55%),var(--pk-s3);
+  box-shadow:inset 0 1px 0 var(--pk-light),0 4px 8px var(--pk-shade),0 24px 48px -16px var(--pk-shade)}
+.pk-lift{transition:transform var(--pk-d2) var(--pk-ease),box-shadow var(--pk-d2) var(--pk-ease)}
+@media (hover:hover){.pk-lift:hover{transform:translateY(-2px)}}
+
+/* ============ 2. Texture: code-drawn grain over the whole app ============ */
+body.pk-grain::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:2147483000;
+  opacity:var(--pk-grain);mix-blend-mode:var(--pk-grain-blend);
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .5 0 0 0 0 .5 0 0 0 0 .5 0 0 0 1 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+.pk-vignette{position:relative;isolation:isolate}
+.pk-vignette::before{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;
+  background:radial-gradient(120% 80% at 50% 0%,transparent 40%,var(--pk-shade) 100%)}
+
+/* ============ 3. Art frames: hero banners and card thumbnails ============ */
+.pk-hero{position:relative;overflow:hidden;border-radius:var(--pk-radius);min-height:180px;
+  display:flex;flex-direction:column;justify-content:flex-end;padding:18px;isolation:isolate;
+  background:var(--pk-s2);color:#fff}
+.pk-hero>.pk-hero-art{position:absolute;inset:0;z-index:-2;width:100%;height:100%;object-fit:cover;
+  transform:scale(1.04);animation:pk-drift 18s var(--pk-ease) infinite alternate}
+.pk-hero::after{content:"";position:absolute;inset:0;z-index:-1;
+  background:linear-gradient(180deg,rgba(0,0,0,0) 20%,rgba(0,0,0,.35) 55%,rgba(0,0,0,.82) 100%)}
+.pk-hero .pk-hero-title{font-family:var(--pk-font-display);font-size:var(--pk-fs-2xl);line-height:1.05;
+  margin:0;text-shadow:0 2px 12px rgba(0,0,0,.6)}
+.pk-hero .pk-hero-sub{font-size:var(--pk-fs-s);opacity:.9;margin-top:6px;text-shadow:0 1px 6px rgba(0,0,0,.6)}
+@keyframes pk-drift{to{transform:scale(1.1) translate3d(-1.5%,-1%,0)}}
+.pk-thumb{flex:none;width:56px;height:56px;border-radius:var(--pk-radius-s);overflow:hidden;position:relative;
+  background:var(--pk-s3);box-shadow:inset 0 0 0 1px var(--pk-edge),0 2px 6px var(--pk-shade)}
+.pk-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.pk-rule{height:1px;border:0;margin:18px auto;width:min(60%,280px);
+  background:linear-gradient(90deg,transparent,var(--pk-accent),transparent);opacity:.7}
+
+/* ============ 5. Type ============ */
+.pk-display{font-family:var(--pk-font-display);letter-spacing:.01em;line-height:1.1}
+.pk-eyebrow{font-size:var(--pk-fs-xs);letter-spacing:.14em;text-transform:uppercase;color:var(--pk-muted);font-weight:600}
+.pk-num{font-variant-numeric:tabular-nums lining-nums}
+
+/* ============ 6. Motion: screen transitions (View Transitions API) ============ */
+@supports (view-transition-name:none){
+  /* old view leaves quickly and the new one enters just after, so two screens never ghost together */
+  ::view-transition-old(root),::view-transition-new(root){animation-timing-function:var(--pk-ease)}
+  ::view-transition-old(root){animation-duration:150ms}
+  ::view-transition-new(root){animation-duration:320ms;animation-delay:40ms}
+  ::view-transition-old(root){animation-name:pk-out}
+  ::view-transition-new(root){animation-name:pk-in}
+  html[data-pk-dir="back"]::view-transition-old(root){animation-name:pk-out-back}
+  html[data-pk-dir="back"]::view-transition-new(root){animation-name:pk-in-back}
+  ::view-transition-group(pk-morph){animation-duration:var(--pk-d3);animation-timing-function:var(--pk-ease)}
+}
+@keyframes pk-out{to{opacity:0;transform:translateX(-18px)}}
+@keyframes pk-in{from{opacity:0;transform:translateX(18px)}}
+@keyframes pk-out-back{to{opacity:0;transform:translateX(18px)}}
+@keyframes pk-in-back{from{opacity:0;transform:translateX(-18px)}}
+/* list entrance: children rise in with a short stagger (pk.js sets --pk-i) */
+.pk-reveal>*{animation:pk-rise var(--pk-d3) var(--pk-ease) both;animation-delay:calc(min(var(--pk-i,0),10) * 28ms)}
+@keyframes pk-rise{from{opacity:0;transform:translateY(8px)}}
+
+/* ============ 7. Press feedback ============ */
+.pk-press{transition:transform var(--pk-d1) var(--pk-ease),filter var(--pk-d1) var(--pk-ease);touch-action:manipulation}
+.pk-press:active{transform:scale(.97);filter:brightness(1.08)}
+
+/* ============ 9. Skeletons instead of spinners ============ */
+.pk-skel{border-radius:var(--pk-radius-s);background:var(--pk-s2);position:relative;overflow:hidden;min-height:14px}
+.pk-skel::after{content:"";position:absolute;inset:0;transform:translateX(-100%);
+  background:linear-gradient(90deg,transparent,var(--pk-light),transparent);animation:pk-shimmer 1.2s infinite}
+@keyframes pk-shimmer{to{transform:translateX(100%)}}
+
+/* ============ 10. Designed empty states ============ */
+.pk-empty{text-align:center;padding:36px 20px;color:var(--pk-muted)}
+.pk-empty .pk-empty-icon{width:64px;height:64px;margin:0 auto 12px;opacity:.85;color:var(--pk-accent)}
+.pk-empty .pk-empty-title{font-family:var(--pk-font-display);font-size:var(--pk-fs-l);color:var(--pk-ink);margin:0 0 6px}
+.pk-empty .pk-empty-body{font-size:var(--pk-fs-s);max-width:30ch;margin:0 auto 14px;line-height:1.45}
+.pk-empty button{min-height:44px;padding:0 18px;border-radius:999px;border:0;background:var(--pk-accent);color:var(--pk-accent-ink);font-weight:700}
+
+/* ============ 11. Offline notice ============
+   A persistent notice. It sits above any bottom tab bar (--pk-dock, set by pk.js). The app's toast (at most one, P3)
+   is lifted above it with .pk-toast-lift so the two never overlap (F-012). */
+.pk-offline{position:fixed;left:50%;bottom:calc(var(--pk-dock,0px) + 14px + env(safe-area-inset-bottom,0px));z-index:2147483001;
+  transform:translate(-50%,12px);opacity:0;visibility:hidden;
+  transition:transform var(--pk-d3) var(--pk-ease),opacity var(--pk-d3) var(--pk-ease),visibility 0s linear var(--pk-d3);
+  background:var(--pk-s3);color:var(--pk-ink);border:1px solid var(--pk-edge);border-radius:999px;
+  padding:9px 16px;font-size:var(--pk-fs-s);box-shadow:0 10px 30px var(--pk-shade);white-space:nowrap}
+.pk-offline.on{transform:translate(-50%,0);opacity:1;visibility:visible;transition-delay:0s}
+
+/* ============ 12. Branded opening (short, never a fake progress bar) ============ */
+.pk-splash{position:fixed;inset:0;z-index:2147483002;display:grid;place-items:center;background:var(--pk-bg);
+  transition:opacity var(--pk-d3) var(--pk-ease),visibility 0s linear var(--pk-d3)}
+.pk-splash img{width:min(46vw,220px);animation:pk-breathe 1.6s var(--pk-ease) infinite alternate}
+.pk-splash.done{opacity:0;visibility:hidden}
+@keyframes pk-breathe{from{transform:scale(.98);opacity:.85}to{transform:scale(1);opacity:1}}
+
+/* ============ 13. Images never show as broken ============ */
+img.pk-img{opacity:0;transition:opacity var(--pk-d3) var(--pk-ease)}
+img.pk-img.pk-loaded{opacity:1}
+/* no placeholder fill behind images: transparent logos and PNG art must stay transparent */
+.pk-monogram{display:grid;place-items:center;width:100%;height:100%;font-family:var(--pk-font-display);
+  font-size:1.2em;color:var(--pk-accent);background:radial-gradient(circle at 30% 25%,var(--pk-s3),var(--pk-s1))}
+
+/* ============ 14. Accessibility safety ============ */
+:where(.pk-press,.pk-s1,.pk-s2,.pk-s3):focus-visible{outline:2px solid var(--pk-accent);outline-offset:2px}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:1ms!important;animation-iteration-count:1!important;transition-duration:1ms!important}
+  .pk-hero>.pk-hero-art{animation:none;transform:none}
+  ::view-transition-group(*),::view-transition-old(*),::view-transition-new(*){animation:none!important}
+}
+@media (prefers-contrast:more){body.pk-grain::after{display:none}.pk-s1,.pk-s2,.pk-s3{border-color:currentColor}}
+
+/* toast lift: add class pk-toast-lift to the app's toast selector list when the offline notice can show */
+body:has(.pk-offline.on) .pk-toast-lift{translate:0 -52px} /* adds to the toast's own transform */

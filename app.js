@@ -122,11 +122,11 @@ function signInDevice(){ if(!hasLocalData())loadLocalSession(); ACCOUNT={mode:'d
 /* sign out of whichever mode is active */
 function signOut(){
   if(ACCOUNT&&ACCOUNT.mode==='cloud'){
-    if(ACCOUNT.pending){ toast("Sign-out isn't ready yet — try again in a moment"); return; }  /* S1/F3: cloud not yet established this launch (offline or still loading) — don't silently no-op */
+    if(ACCOUNT.pending){ toast("Sign-out isn't ready yet. Try again in a moment"); return; }  /* S1/F3: cloud not yet established this launch (offline or still loading) — don't silently no-op */
     if(window.__mercsSync){ window.__mercsSync.signOutCloud(); return; }
   }
   ACCOUNT=null; try{localStorage.removeItem(SAVE_MODE);}catch(e){}
-  updateAccountUI(); toast("Signed out — this session won't be saved");
+  updateAccountUI(); toast("Signed out. This session won't be saved");
 }
 function updateAccountUI(){
   const b=$("#acctBtn");
@@ -224,23 +224,23 @@ function manualCue(){ if(_manualCued)return ""; _manualCued=true; return "cue"; 
 const MANUAL={
  home:{steps:["This is your <b>operations dashboard</b>. Move between sections using the <b>tab bar</b> below (on tablet &amp; desktop) or the <b>menu button (&#9776;)</b> at the top-right (on phones).",
    "Tap a <b>quick-entry card</b> to jump straight into a section.",
-   "Open the seven battlefield <b translate='no'>Tools</b> (plus your Favorites) from the Tools button &mdash; in the header on tablet &amp; desktop, or inside the <b>&#9776; menu</b> on phones &mdash; they overlay any section.",
-   "<b translate='no'>Search</b> is always in the header (top-right) &mdash; find any unit, card, mission, rule, or keyword instantly."],
-   tip:"Sign in (optional) &mdash; in the header on tablet &amp; desktop, or inside the <b>&#9776; menu</b> on phones &mdash; to keep teams, trackers and favorites across sessions."},
+   "Open the seven battlefield <b translate='no'>Tools</b> (plus your Favorites) from the Tools button (in the header on tablet &amp; desktop, or inside the <b>&#9776; menu</b> on phones). They overlay any section.",
+   "<b translate='no'>Search</b> is always in the header (top-right): find any unit, card, mission, rule, or keyword instantly."],
+   tip:"Sign in (optional) from the header on tablet &amp; desktop, or from the <b>&#9776; menu</b> on phones, to keep teams, trackers and favorites across sessions."},
  megacons:{steps:["Pick a <b>MegaCon</b> (faction) to see its roster in card order.",
-   "Tap a unit to open its full Reference Card — the real card front and back, plus a structured breakdown.",
+   "Tap a unit to open its full Reference Card: the real card front and back, plus a structured breakdown.",
    "The eight <b>stats</b> are color-coded across the whole game; tap any tile for its meaning.",
    "Search within a faction with the box at the top of the roster."],
    tip:"Tap the &#9733; on a unit to add it to Favorites."},
- contingency:{steps:["Pick a <b>MegaCon</b> — its deck is the 19 shared cards plus its one faction-unique card.",
+ contingency:{steps:["Pick a <b>MegaCon</b>. Its deck is the 19 shared cards plus its one faction-unique card.",
    "Each card shows its <b>OP</b> value, the verbatim reveal text, and the printed card image.",
    "To deal and manage a live hand, open the <b>Contingency Draw</b> tool."],
    tip:"Tap the &#9733; on a card to favorite it."},
  corp:{steps:["Pick a <b>MegaCon</b> to read its Corporate Traits.",
    "Each trait shows its name and verbatim rules text.",
-   "Some MegaCons add a reference table — it is rendered in full below the traits.",
+   "Some MegaCons add a reference table; it is rendered in full below the traits.",
    "The printed Corporate card image is shown for each MegaCon."],
-   tip:"Corporate Traits always apply — they are not optional."},
+   tip:"Corporate Traits always apply; they are not optional."},
  operations:{steps:["Choose an <b>Operation</b> to read its full mission package.",
    "Review the briefing, mission parameters, area of operations, course of action and environmental analysis.",
    "<b>Secured Objectives</b> list every way to score OP for the mission.",
@@ -250,19 +250,19 @@ const MANUAL={
    "Switch to <b>Recon</b> for the add-on: FAQ, add-on rules and revised rules.",
    "Figure callouts describe the diagrams from the printed rulebook.",
    "Use Search to jump to a rule by keyword."],
-   tip:"Long-form typography — settle in and read."},
+   tip:"Long-form typography: settle in and read."},
  modifiers:{steps:["These are the three combat <b>modifier tables</b> from the rulebook.",
    "Apply the listed modifiers to the relevant Ranged or Melee Combat rolls.",
    "Asterisked notes are reproduced verbatim beneath each table."],
-   tip:"Positional and Elevation modifiers can stack — read each table's notes."},
+   tip:"Positional and Elevation modifiers can stack, so read each table's notes."},
  keywords:{steps:["A searchable <b>glossary</b> of every Keyword and Personal Ability.",
    "Type in the box to filter; results stay alphabetized.",
    "Switch between <b translate='no'>Keywords</b> and <b>Personal Abilities</b> with the toggle.",
-   "Keyword names also appear on unit weapons — tap them there to pop the definition."],
+   "Keyword names also appear on unit weapons; tap them there to pop the definition."],
    tip:"37 Keywords and 60 Personal Abilities, transcribed verbatim."}
 };
 function manual(id){const m=MANUAL[id];if(!m)return "";
-  return `<details class="manual ${manualCue()}"><summary><span class="mico">${ICO.book}</span>Field Manual — How to use this PAGE<span class="tw">&#9656;</span></summary>
+  return `<details class="manual ${manualCue()}"><summary><span class="mico">${ICO.book}</span>Field Manual: How to use this PAGE<span class="tw">&#9656;</span></summary>
     <div class="mbody"><ol>${m.steps.map(s=>`<li>${s}</li>`).join("")}</ol>${m.tip?`<div class="tip">&#9733; ${m.tip}</div>`:""}</div></details>`;}
 
 /* ---------- per-tool mini-tutorials (same .manual style, collapsed by default) ---------- */
@@ -270,11 +270,11 @@ const TOOL_MANUAL={
  codex:{steps:[
    "Pick a <b>MegaCon</b> from the dropdown to list all of its units.",
    "Type in the <b>Search name</b> box to filter that faction's roster.",
-   "Tap any unit to open its stat card — each value is <b>heat-coloured</b> against the whole game (it knows low CR/IT/AF are good).",
+   "Tap any unit to open its stat card. Each value is <b>heat-coloured</b> against the whole game (it knows low CR/IT/AF are good).",
    "Tap a coloured stat to pop its meaning; open the <b>MegaCons</b> tab for the full card."],
    tip:"A fast way to compare a unit's strengths and weaknesses at a glance."},
  round:{steps:[
-   "Choose a MegaCon and unit, then <b>+ Add</b> each model — add both sides to track the whole table.",
+   "Choose a MegaCon and unit, then <b>+ Add</b> each model. Add both sides to track the whole table.",
    "Tap <b>Roll initiative</b> to roll a d10 for every model; use <b>-/+</b> to apply the model's IM modifier (clamped to its IM).",
    "Activate top-down: the highest total leads (<b>Quick</b> breaks ties on the same step).",
    "Tap <b>Activate</b> as each model acts, then <b>Next round</b> to reset rolls for the new round.",
@@ -282,31 +282,31 @@ const TOOL_MANUAL={
    tip:"Initiative, IM modifiers and Quick tie-breaks are handled for you."},
  opsetup:{steps:[
    "Pick a mission to load its <b>Contingency hand size</b> and <b>Live Contingency Round</b>.",
-   "Read the briefing, then tap an objective to tick it <b>Secured</b> — the OP tally updates live.",
+   "Read the briefing, then tap an objective to tick it <b>Secured</b>; the OP tally updates live.",
    "Use <b>Clear ticks</b> to reset objectives for a new game.",
    "Tap <b>Deal this hand in Contingency Draw</b> to carry the hand size straight into that tool."],
    tip:"Your ticks for each operation are saved separately on this device."},
  draw:{steps:[
-   "Choose a MegaCon — the deck is 19 shared cards plus that faction's 1 unique card.",
+   "Choose a MegaCon. The deck is 19 shared cards plus that faction's 1 unique card.",
    "Set the <b>Hand</b> size (or it arrives pre-filled from Operation Setup), then <b>Shuffle &amp; deal</b>.",
    "Tap <b>Set as Live</b> on one card to mark your Live Contingency Card (it can't be discarded).",
    "<b>Discard</b> returns a card to the deck; <b>+ Draw one</b> takes the next card.",
    "<b>Clear page</b> resets the hand and any carried-over operation settings."],
    tip:"The Live Contingency Card is protected from discarding, by the rules."},
  damage:{steps:[
-   "Add each MERCS by MegaCon and unit — its Blood (BL) and Armor (AF) are loaded automatically.",
+   "Add each MERCS by MegaCon and unit; its Blood (BL) and Armor (AF) are loaded automatically.",
    "Use <b>-/+</b> to track <b>Blood</b> pips; a model is KILLED when Blood reaches its BL.",
-   "Tap <b>Roll armor check</b> to roll a d10 — equal or higher than AF holds, lower fails (<b>AF 0 always fails</b>).",
+   "Tap <b>Roll armor check</b> to roll a d10: equal or higher than AF holds, lower fails (<b>AF 0 always fails</b>).",
    "Toggle status chips (Pinned, Burning, Armor Broken…) to flag conditions.",
    "<b>Clear page</b> wipes the squad to start fresh."],
    tip:"Armor Failure is resolved exactly by the book, including the AF 0 auto-fail."},
  strike:{steps:[
    "Pick one <b>MegaCon</b> and a <b>team size</b> (3-5 members).",
-   "Add units from that faction — duplicate <b>archetypes</b> are disabled, since they aren't legal.",
+   "Add units from that faction. Duplicate <b>archetypes</b> are disabled, since they aren't legal.",
    "Watch the status line: it confirms a <b>Legal Strike Team</b> or flags what's wrong.",
    "Tap the remove button to drop a member, or <b>Clear team</b> to start over.",
    "Changing MegaCon resets the roster. (MERCS has no point system.)"],
-   tip:"Legality — one MegaCon, no repeated archetype — is enforced as you build."},
+   tip:"Legality (one MegaCon, no repeated archetype) is enforced as you build."},
  favorites:{steps:[
    "Star (&#9733;) any unit, contingency card or operation elsewhere in the app to collect it here.",
    "Items are grouped by type: Units, Contingency Cards and Operations.",
@@ -314,7 +314,7 @@ const TOOL_MANUAL={
    "Tap the remove button on any entry to take it off your favorites."],
    tip:"Favorites are saved on this device and survive between sessions when signed in."},
  compare:{steps:[
-   "Pick a <b>MegaCon</b> and a unit, then tap <b>+ Add</b> — you can stack up to <b>three</b>, even across factions.",
+   "Pick a <b>MegaCon</b> and a unit, then tap <b>+ Add</b>. You can stack up to <b>three</b>, even across factions.",
    "The table puts the eight stats (IM, RE, CR, MP, BL, AV, AF, IT) down the side and your units across the top.",
    "Values are <b>heat-coloured</b> the same way as the Codex, and the best value in each row is <b>starred</b>.",
    "Below the stats you'll see each unit's <b>archetype</b> and full <b>weapon</b> list (B/S/M/L).",
@@ -326,7 +326,7 @@ function toolManual(id){const m=TOOL_MANUAL[id];if(!m)return "";
     <div class="mbody"><ol>${m.steps.map(s=>`<li>${s}</li>`).join("")}</ol>${m.tip?`<div class="tip">&#9733; ${m.tip}</div>`:""}</div></details>`;}
 
 /* ---------- license footer (reused on every panel) ---------- */
-const LICENSE=`<footer class="src">MERCS&trade; &copy; Fifth Angel Studios — used under license. App by <a href="https://digirunestudios.com" target="_blank" rel="noopener" class="dr-link"><b>DigiRune Studios</b></a>.<br>All stats, cards &amp; rules transcribed verbatim from the MERCS 2.5 source.</footer>`;
+const LICENSE=`<footer class="src">MERCS&trade; &copy; Fifth Angel Studios. Used under license. App by <a href="https://digirunestudios.com" target="_blank" rel="noopener" class="dr-link"><b>DigiRune Studios</b></a>.<br>All stats, cards &amp; rules transcribed verbatim from the MERCS 2.5 source.</footer>`;
 
 /* ---------- inline SVG icons (hand-authored) ---------- */
 const ICO={
@@ -356,6 +356,8 @@ const ICO={
 /* ============================================================
    ROUTER — 7 content tabs as lazy-built panels
    ============================================================ */
+/* Visible app version (About screen). Bump together with CACHE="mercs-vNN" in sw.js on every release. */
+const APP_VERSION="31";
 const TABS=[
  {id:"home",t:"Home",ico:ICO.home},
  {id:"megacons",t:"MegaCons",ico:ICO.mega},
@@ -408,7 +410,7 @@ function favs(){const f=Store.get("favs",null)||{};const arr=k=>Array.isArray(f[
   return{units:arr("units"),contingency:arr("contingency").filter(x=>String(x).indexOf("|")>0),operations:arr("operations")};}
 function isFav(kind,key){return favs()[kind].includes(key);}
 function toggleFav(kind,key,label){const f=favs();const arr=f[kind];const i=arr.indexOf(key);
-  if(i>=0){arr.splice(i,1);toast("Removed from Favorites");}else{arr.push(key);toast((label||"Added")+" — favorited");}
+  if(i>=0){arr.splice(i,1);toast("Removed from Favorites");}else{arr.push(key);toast(label?label+" added to Favorites":"Added to Favorites");}
   Store.set("favs",f);
   syncStars();
 }
@@ -453,7 +455,7 @@ builders.home=function(p){
      <div class="herotag" translate="no">Official Field Companion</div>
    </div>
    <div class="homewrap">
-     <p class="vsub" style="text-align:center;margin:.9rem 0 .2rem">Your complete tactical reference for MERCS 2.5 — every unit, card, mission and rule, plus seven battlefield tools and your Favorites.</p>
+     <p class="vsub" style="text-align:center;margin:.9rem 0 .2rem">Your complete tactical reference for MERCS 2.5: every unit, card, mission and rule, plus seven battlefield tools and your Favorites.</p>
      ${manual("home")}
      <h2 class="vh" style="margin-top:.6rem">Sections</h2>
      <div class="qtiles">${quick.map(q=>`<button class="tile" data-go="${q.id}"><span class="edge"></span><span class="ico">${q.ico}</span><h3 translate="no">${esc(q.t)}</h3><p>${esc(q.d)}</p><span class="go">Open &#8250;</span></button>`).join("")}</div>
@@ -516,7 +518,7 @@ function showUnit(i){const u=DATA.units[i];
       <figure class="cardfig"><img loading="eager" src="${esc(u.imgBack)}" alt="${esc(cap(u.name))} card back"><figcaption>Back</figcaption></figure>
     </div>
     <div class="stats">${stats}</div>
-    ${u.deployable?'<div class="rule"><span>Deployable — stats shown as <b translate="no">X</b> are not used (it does not roll initiative or take normal damage).</span></div>':''}
+    ${u.deployable?'<div class="rule"><span>Deployable: stats shown as <b translate="no">X</b> are not used (it does not roll initiative or take normal damage).</span></div>':''}
     ${weapons}${abil}${kit}
     <div class="divider"></div><div class="small muted">Tap a stat for its meaning; tap a keyword for its rule. Tap a card image to view full size.</div></div>`;
   wireStars(d);
@@ -724,7 +726,7 @@ function reconRuleEntries(){
 }
 builders.rules=function(p){
   const mode=Store.get("rulesMode","core");
-  p.innerHTML=`<h2 class="vh">Rules</h2><p class="vsub">The MERCS 2.5 ruleset, transcribed verbatim — plus the Recon add-on. Pick a section to read it on its own.</p>
+  p.innerHTML=`<h2 class="vh">Rules</h2><p class="vsub">The MERCS 2.5 ruleset, transcribed verbatim, plus the Recon add-on. Pick a section to read it on its own.</p>
    ${manual("rules")}
    <div class="seg" id="rulesSeg">
      <button class="segb ${mode==='core'?'on':''}" data-m="core">Core 2.5</button>
@@ -822,7 +824,7 @@ let TOOL_CUR=null;
 function openToolsMenu(){
   TOOL_CUR=null;   /* S3-fix: the tool PICKER has no active tool, so a background rebuildAll must not re-open the last one */
   $("#toolsTitle").textContent="Field Tools";
-  $("#toolsBody").innerHTML=`<p class="vsub" style="margin:.2rem 0 .8rem">Seven battlefield tools plus your Favorites — usable over any screen.</p>
+  $("#toolsBody").innerHTML=`<p class="vsub" style="margin:.2rem 0 .8rem">Seven battlefield tools plus your Favorites, usable over any screen.</p>
     <div class="toolmenu">${TOOLDEFS.map(t=>`<button class="toolcard" data-tool="${t.id}"><span class="ico">${t.ico}</span><div><h3 translate="no">${esc(t.t)}</h3><p>${esc(t.d)}</p></div><span class="ar">&#8250;</span></button>`).join("")}</div>`;
   $$("#toolsBody [data-tool]").forEach(b=>b.onclick=()=>openTool(b.dataset.tool));
   $("#toolsBack").style.display="none";
@@ -887,7 +889,7 @@ function toolRound(v){
     if(!roster.length){$("#rdList",v).innerHTML=`<div class="empty">Add MERCS to begin. Tip: add both sides to track the whole table.</div>`;save();return;}
     $("#rdList",v).innerHTML=ord.map((o,pos)=>{const r=o.r;const rolled=r.roll!=null;
       return `<div class="trkitem ${r.done?'done':''} ${pos===0&&rolled?'active':''}">
-        <div class="initbadge ${pos===0&&rolled?'lead':''}">${rolled?o.fin:'—'}</div>
+        <div class="initbadge ${pos===0&&rolled?'lead':''}">${rolled?o.fin:'–'}</div>
         <div class="grow"><div class="nm" translate="no">${esc(cap(o.u.name))} ${o.quick?'<span class="chip q">Quick</span>':''}</div>
           <div class="meta" translate="no">${esc(o.u.faction)} · IM ${esc(o.u.stats.IM)}${rolled?` · rolled ${r.roll}${r.mod?` ${r.mod>0?'+':''}${r.mod}`:''}`:''}</div></div>
         ${rolled?`<div class="row"><button class="stog" data-m="-1" data-id="${o.idx}">−</button><button class="stog" data-m="1" data-id="${o.idx}">+</button>
@@ -950,7 +952,7 @@ function toolDraw(v){
   function deal(){const f=facNow();const deck=deckForDraw(f).map((c,i)=>({...c,id:i}));shuffle(deck);const n=Math.min(+$("#ctHand",v).value||4,deck.length);
     state={fac:f,drawn:deck.slice(0,n),rest:deck.slice(n),live:null};persist();draw();}
   function draw(){if(!state||state.fac!==facNow()){$("#ctHandWrap",v).innerHTML=`<div class="empty">Choose a MegaCon and deal a hand.</div>`;$("#ctInfo",v).textContent="";return;}
-    $("#ctInfo",v).innerHTML=`Deck: <b translate="no">${esc(state.fac)}</b> — ${deckForDraw(state.fac).length} cards · holding <b>${state.drawn.length}</b> · ${state.rest.length} left`;
+    $("#ctInfo",v).innerHTML=`Deck: <b translate="no">${esc(state.fac)}</b> · ${deckForDraw(state.fac).length} cards · holding <b>${state.drawn.length}</b> · ${state.rest.length} left`;
     $("#ctHandWrap",v).innerHTML=state.drawn.map(c=>`<div class="handcard ${state.live===c.id?'live':''}">
         <div class="row" style="justify-content:space-between"><span class="ct" translate="no">${esc(c.title)} ${c.core?'':'<span class="chip dep">Faction</span>'}</span><span class="cop">${esc(c.op)}</span></div>
         <div class="cx">${esc(c.text)}</div><div class="row2"><button class="stog ${state.live===c.id?'on':''}" data-live="${c.id}">${state.live===c.id?'★ Live card':'Set as Live'}</button>
@@ -968,7 +970,7 @@ function toolDraw(v){
 function toolDamage(v){
   let squad=Store.get("dmgSquad",[]);
   v.innerHTML=`${toolManual("damage")}<p class="vsub">Track Blood per MERCS and resolve Armor Failure exactly by the book.</p>
-   <div class="rule"><span><b>Armor Failure:</b> after a hit, roll a d10 — <b>equal or higher than AF = armor holds</b>; lower = it fails. <b>AF 0 always fails.</b> A model dies when Blood reaches its BL.</span></div>
+   <div class="rule"><span><b>Armor Failure:</b> after a hit, roll a d10: <b>equal or higher than AF = armor holds</b>; lower = it fails. <b>AF 0 always fails.</b> A model dies when Blood reaches its BL.</span></div>
    <div class="row"><select id="dgFac" translate="no">${factionOptions(FACTIONS_AZ[0])}</select><select id="dgUnit" translate="no"></select><button class="btn sm" id="dgAdd">+ Add</button><button class="btn ghost sm" id="dgClear">Clear page</button></div><div id="dgList"></div>`;
   const STATUS=["Pinned","Disoriented","Burning","Forced","Suppressed","Armor Broken"];
   const fillUnits=()=>{$("#dgUnit",v).innerHTML=extByFaction($("#dgFac",v).value).map(u=>`<option value="${unitIndex(u)}">${esc(cap(u.name))} (BL ${esc(u.stats.BL)} · AF ${esc(u.stats.AF)})</option>`).join("");};
@@ -986,7 +988,7 @@ function toolDamage(v){
     $$("#dgList [data-del]",v).forEach(b=>b.onclick=()=>{squad.splice(+b.dataset.del,1);draw();});
     $$("#dgList [data-b]",v).forEach(b=>b.onclick=()=>{const s=squad[+b.dataset.i];s.blood=Math.max(0,s.blood+ +b.dataset.b);draw();});
     $$("#dgList [data-af]",v).forEach(b=>b.onclick=()=>{const s=squad[+b.dataset.af];const u=DATA.units[s.i];const af=+u.stats.AF;const r=d10();const pass=(af===0)?false:(r>=af);
-      s.afMsg=`d10=${r} — ${pass?'armor HOLDS':'armor FAILS'}${af===0?' (AF 0 auto-fail)':''}`;draw();if(!pass&&!s.status.includes("Armor Broken"))toast("Armor failed — mark Armor Broken / apply penalties.");});
+      s.afMsg=`d10=${r}: ${pass?'armor HOLDS':'armor FAILS'}${af===0?' (AF 0 auto-fail)':''}`;draw();if(!pass&&!s.status.includes("Armor Broken"))toast("Armor failed. Mark Armor Broken / apply penalties.");});
     $$("#dgList [data-st]",v).forEach(b=>b.onclick=()=>{const[si,st]=b.dataset.st.split("|");const s=squad[+si];s.status=s.status.includes(st)?s.status.filter(x=>x!==st):[...s.status,st];draw();});
     save();}
   $("#dgFac",v).onchange=fillUnits;$("#dgAdd",v).onclick=()=>{squad.push({i:+$("#dgUnit",v).value,blood:0,status:[],afMsg:""});draw();};
@@ -1000,15 +1002,15 @@ function toolStrike(v){
   if(!DATA.factions.includes(team.fac))team.fac=null;
   const save=()=>Store.set("strikeTeam",team);
   function render(){
-    const facSel=`<select id="stFac" translate="no"><option value="">— pick MegaCon —</option>${FACTIONS_AZ.map(f=>`<option ${f===team.fac?'selected':''}>${esc(f)}</option>`).join("")}</select>`;
+    const facSel=`<select id="stFac" translate="no"><option value="">Pick a MegaCon</option>${FACTIONS_AZ.map(f=>`<option ${f===team.fac?'selected':''}>${esc(f)}</option>`).join("")}</select>`;
     const sizeSel=`<select id="stSize">${[3,4,5].map(n=>`<option value="${n}" ${n===team.size?'selected':''}>${n}-member team</option>`).join("")}</select>`;
     let addSel="";
     if(team.fac){
       const used=team.members.map(i=>DATA.units[i].archetype);
       const opts=extByFaction(team.fac).filter(u=>!team.members.includes(unitIndex(u))).map(u=>{
         const dup=used.includes(u.archetype);
-        return `<option value="${unitIndex(u)}" ${dup?'disabled':''}>${esc(cap(u.name))} (${esc(u.archetype)})${dup?' — archetype taken':''}</option>`;}).join("");
-      addSel=`<select id="stUnit" translate="no">${opts||'<option>— none left —</option>'}</select><button class="btn sm" id="stAdd" ${team.members.length>=team.size?'disabled':''}>+ Add</button>`;
+        return `<option value="${unitIndex(u)}" ${dup?'disabled':''}>${esc(cap(u.name))} (${esc(u.archetype)})${dup?' (archetype taken)':''}</option>`;}).join("");
+      addSel=`<select id="stUnit" translate="no">${opts||'<option>None left</option>'}</select><button class="btn sm" id="stAdd" ${team.members.length>=team.size?'disabled':''}>+ Add</button>`;
     }
     const roster=team.members.length?`<div class="list">${team.members.map((i,pos)=>{const u=DATA.units[i];
       return `<div class="item"><img class="thumb" loading="lazy" src="${esc(u.imgFront)}" alt="">
@@ -1018,7 +1020,7 @@ function toolStrike(v){
     const archs=team.members.map(i=>DATA.units[i].archetype);
     const dupArch=archs.length!==new Set(archs).size;
     const valid=team.fac&&team.members.length>0&&team.members.length<=team.size&&!dupArch;
-    const vmsg=!team.fac?"":(dupArch?'<span class="bad">Duplicate archetype — not legal.</span>':(team.members.length>team.size?'<span class="bad">Over team size.</span>':(valid?'<span class="good">Legal Strike Team &#10003;</span>':'<span class="muted">Add members…</span>')));
+    const vmsg=!team.fac?"":(dupArch?'<span class="bad">Duplicate archetype: not legal.</span>':(team.members.length>team.size?'<span class="bad">Over team size.</span>':(valid?'<span class="good">Legal Strike Team &#10003;</span>':'<span class="muted">Add members…</span>')));
     v.innerHTML=`${toolManual("strike")}<p class="vsub">Build a legal Strike Team: one MegaCon, no duplicate archetypes, up to your chosen size. (MERCS has no point system.)</p>
       <div class="row">${facSel}${sizeSel}</div>
       <div class="row" style="margin-top:.6rem">${addSel}<span class="grow"></span><button class="btn ghost sm" id="stClear">Clear team</button></div>
@@ -1113,7 +1115,7 @@ function toolCompare(v){
     v.innerHTML=`${toolManual("compare")}<p class="vsub">Stack 2-3 units (any factions) and read their stats, archetype and weapons together.</p>${addBlock}${body}`;
     // wire add controls
     const fillUnits=()=>{const f=$("#cmpFac",v).value;
-      $("#cmpUnit",v).innerHTML=extByFaction(f).map(u=>`<option value="${unitIndex(u)}"${sel.includes(unitIndex(u))?' disabled':''}>${esc(cap(u.name))}${sel.includes(unitIndex(u))?' — added':''}</option>`).join("");};
+      $("#cmpUnit",v).innerHTML=extByFaction(f).map(u=>`<option value="${unitIndex(u)}"${sel.includes(unitIndex(u))?' disabled':''}>${esc(cap(u.name))}${sel.includes(unitIndex(u))?' (added)':''}</option>`).join("");};
     if($("#cmpFac",v)){$("#cmpFac",v).onchange=fillUnits;fillUnits();}
     if($("#cmpAdd",v))$("#cmpAdd",v).onclick=()=>{
       const i=+$("#cmpUnit",v).value;
@@ -1238,11 +1240,11 @@ function buildSearchIndex(){
   // Recon add-on rules — FAQ (grouped + each question), Add-Ons, Rules-Revised  (previously NOT searchable)
   if(DATA.rules.recon){const r=DATA.rules.recon;
     if(r.faq&&r.faq.length){
-      idx.push({type:"Rule",key:"rec-rule-recon-faq",label:"Recon — Frequently Asked Questions",sub:"Recon Add-On",text:"Recon FAQ "+r.faq.map(x=>x.q+" "+x.a).join(" "),go:()=>deepGoRule("recon-faq","recon")});
+      idx.push({type:"Rule",key:"rec-rule-recon-faq",label:"Recon: Frequently Asked Questions",sub:"Recon Add-On",text:"Recon FAQ "+r.faq.map(x=>x.q+" "+x.a).join(" "),go:()=>deepGoRule("recon-faq","recon")});
       r.faq.forEach(x=>idx.push({type:"Rule",key:"rec-rule-recon-faq",label:cleanRuleText(x.q),sub:"Recon FAQ",text:cleanRuleText(x.q)+" "+cleanRuleText(x.a),go:()=>deepGoRule("recon-faq","recon")}));
     }
-    (r.addOns||[]).forEach(x=>idx.push({type:"Rule",key:"rec-rule-recon-add-"+SLUG(x.title),label:"Recon — "+x.title,sub:"Recon Add-On",text:"Recon "+x.title+" "+cleanRuleText(x.body),go:()=>deepGoRule("recon-add-"+SLUG(x.title),"recon")}));
-    (r.rulesRevised||[]).forEach(x=>idx.push({type:"Rule",key:"rec-rule-recon-rev-"+SLUG(x.title),label:"Recon — "+x.title,sub:"Recon Rules Revised",text:"Recon "+x.title+" "+cleanRuleText(x.body),go:()=>deepGoRule("recon-rev-"+SLUG(x.title),"recon")}));
+    (r.addOns||[]).forEach(x=>idx.push({type:"Rule",key:"rec-rule-recon-add-"+SLUG(x.title),label:"Recon: "+x.title,sub:"Recon Add-On",text:"Recon "+x.title+" "+cleanRuleText(x.body),go:()=>deepGoRule("recon-add-"+SLUG(x.title),"recon")}));
+    (r.rulesRevised||[]).forEach(x=>idx.push({type:"Rule",key:"rec-rule-recon-rev-"+SLUG(x.title),label:"Recon: "+x.title,sub:"Recon Rules Revised",text:"Recon "+x.title+" "+cleanRuleText(x.body),go:()=>deepGoRule("recon-rev-"+SLUG(x.title),"recon")}));
   }
   // Modifier tables  (previously NOT searchable)
   DATA.modifiers.forEach(m=>idx.push({type:"Modifier",key:"rec-mod-"+SLUG(m.title),label:m.title,sub:"Modifier Table",text:m.title+" "+(m.columns||[]).join(" ")+" "+(m.rows||[]).map(rw=>rw.join(" ")).join(" ")+" "+(m.notes||""),go:()=>deepGoModifier(SLUG(m.title))}));
@@ -1404,7 +1406,7 @@ async function xlNativeTranslate(code,nodes,quiet){
       if(!quiet)xlBar("Preparing "+xlName(code)+"…",null);
       XL.tr=await Translator.create({sourceLanguage:"en",targetLanguage:code,
         monitor(m){m.addEventListener("downloadprogress",e=>{
-          if(!quiet)xlBar("Downloading "+xlName(code)+" — one time only…",Math.round((e.loaded||0)*100));});}});
+          if(!quiet)xlBar("Downloading "+xlName(code)+" (one time only)…",Math.round((e.loaded||0)*100));});}});
       XL.trLang=code;
     }
     let done=0;const queue=need.slice();
@@ -1483,14 +1485,14 @@ function xlLegacy(code){
   let applied=false;
   const poll=setInterval(()=>{
     if(_gteState==="failed"){clearInterval(poll);xlBarHide();
-      toast("Translation is unavailable right now — please try again with a connection.");return;}
+      toast("Translation is unavailable right now. Please try again with a connection.");return;}
     const sel=document.querySelector(".goog-te-combo");
     if(sel&&!applied){sel.value=code;sel.dispatchEvent(new Event("change"));applied=true;}
     const changed=probe&&probe.nodeValue!==before;
     if(changed||(!code&&applied)){clearInterval(poll);xlBarHide();
       toast(code?("Translated to "+xlName(code)):"Showing the original English");return;}
     if(Date.now()>deadline){clearInterval(poll);xlBarHide();
-      toast("Translation is taking too long — please try again with a connection.");}
+      toast("Translation is taking too long. Please try again with a connection.");}
   },400);
 }
 
@@ -1513,11 +1515,11 @@ async function setTranslate(code){
     XL.lang=code;
     try{localStorage.setItem(XL_LANGKEY,code);}catch(e){}
     xlBarHide();
-    toast("Translated to "+xlName(code)+" — game terms stay in English");
+    toast("Translated to "+xlName(code)+". Game terms stay in English");
     xlObserve();
   }catch(e){
     xlRevert();XL.lang="";xlBarHide();
-    toast("Couldn’t translate — a connection is needed the first time you use a language.");
+    toast("Couldn’t translate: a connection is needed the first time you use a language.");
   }finally{XL.busy=false;}
 }
 window.setTranslate=setTranslate;
@@ -1573,11 +1575,12 @@ function shopMercs(){window.open("https://www.mercsminiatures.com/store","_blank
 window.shopMercs=shopMercs;
 function openAbout(){
   popOpen(`<h4>About &amp; Privacy</h4>
-    <p class="small" style="color:var(--ink2)">The official MERCS Companion by <a href="https://digirunestudios.com" target="_blank" rel="noopener" class="dr-link"><b>DigiRune Studios</b></a>. A complete field reference for the MERCS 2.5 tabletop game — every unit, contingency card, corporate trait, operation, rule, modifier and keyword, plus seven battlefield tools and your Favorites.</p>
+    <p class="small" style="color:var(--ink2)">The official MERCS Companion by <a href="https://digirunestudios.com" target="_blank" rel="noopener" class="dr-link"><b>DigiRune Studios</b></a>. A complete field reference for the MERCS 2.5 tabletop game: every unit, contingency card, corporate trait, operation, rule, modifier and keyword, plus seven battlefield tools and your Favorites.</p>
     <h4 style="font-size:1rem;margin-top:.8rem">Privacy</h4>
-    <p class="small" style="color:var(--ink2)">The app works fully offline and shows <b>no ads</b>. Without signing in it collects <b>no personal data</b> &mdash; nothing leaves your device. Signing in with <b>Google</b> or <b>Apple</b> is optional; it creates a private account so your favorites, strike teams and trackers <b>sync across your devices</b>. We then store only your name, email and your in-app selections, using Google Firebase (Authentication + Firestore) as the processor. We never sell your data or use it for ads. You can delete your account and all synced data anytime from <b>Sign In &rarr; Delete account &amp; data</b>, or read the full policy and deletion steps at <a href="https://mercs.digirunestudios.com/privacy.html" target="_blank" rel="noopener" class="dr-link">mercs.digirunestudios.com/privacy</a>.</p>
+    <p class="small" style="color:var(--ink2)">The app works fully offline and shows <b>no ads</b>. Without signing in it collects <b>no personal data</b>; nothing leaves your device. Signing in with <b>Google</b> or <b>Apple</b> is optional; it creates a private account so your favorites, strike teams and trackers <b>sync across your devices</b>. We then store only your name, email and your in-app selections, using Google Firebase (Authentication + Firestore) as the processor. We never sell your data or use it for ads. You can delete your account and all synced data anytime from <b>Sign In &rarr; Delete account &amp; data</b>, or read the full policy and deletion steps at <a href="https://mercs.digirunestudios.com/privacy.html" target="_blank" rel="noopener" class="dr-link">mercs.digirunestudios.com/privacy</a>.</p>
     <h4 style="font-size:1rem;margin-top:.8rem">Credits &amp; License</h4>
-    <p class="small" style="color:var(--ink2)">MERCS&trade; &copy; Fifth Angel Studios — used under license. All stats, cards and rules are transcribed verbatim from the MERCS 2.5 source. Interface icons are hand-authored by DigiRune Studios; fonts (Oswald, Days One, Barlow) are served from Google Fonts under the SIL Open Font License.</p>
+    <p class="small" style="color:var(--ink2)">MERCS&trade; &copy; Fifth Angel Studios. Used under license. All stats, cards and rules are transcribed verbatim from the MERCS 2.5 source. Interface icons are hand-authored by DigiRune Studios; fonts (Oswald, Days One, Barlow) are served from Google Fonts under the SIL Open Font License.</p>
+    <p class="small" style="color:var(--ink2);margin-top:.6rem">Version ${APP_VERSION}</p>
     <div class="row" style="margin-top:.9rem"><button class="btn" id="abShop"><span class="ico" style="width:18px;height:18px;display:inline-block;vertical-align:-3px">${ICO.cart}</span> Shop MERCS</button></div>`);
   $("#abShop").onclick=shopMercs;
 }
@@ -1797,13 +1800,13 @@ function openAccount(){
     $("#siStop").onclick=()=>{signOut();popClose();};
   }else{
     popOpen(`<h4>Sign in to sync</h4>
-      <p class="small muted">Keep your favorites, strike teams and trackers and sync them across all your devices. Optional &mdash; you can also just save on this device.</p>
+      <p class="small muted">Keep your favorites, strike teams and trackers and sync them across all your devices. Optional: you can also just save on this device.</p>
       <div class="signin-official">
         <button class="gsi-btn" id="siGoogle">${GLOGO}<span>Sign in with Google</span></button>
         <button class="asi-btn" id="siApple">${ALOGO}<span>Sign in with Apple</span></button>
       </div>
       <div class="row" style="margin-top:.2rem"><button class="btn ghost sm" id="siDevice">Just save on this device</button></div>
-      <p class="small muted" style="margin-top:.55rem">Signing in creates a private account that stores only your in-app selections &mdash; no tracking, no ads. You can delete it anytime. <a href="#" id="siPriv" class="dr-link">Privacy</a>.</p>`);
+      <p class="small muted" style="margin-top:.55rem">Signing in creates a private account that stores only your in-app selections. No tracking, no ads. You can delete it anytime. <a href="#" id="siPriv" class="dr-link">Privacy</a>.</p>`);
     $("#siGoogle").onclick=()=>{if(window.__mercsSync)window.__mercsSync.signInGoogle();};
     $("#siApple").onclick=()=>{if(window.__mercsSync)window.__mercsSync.signInApple();};
     $("#siDevice").onclick=()=>{signInDevice();popClose();};
@@ -1845,7 +1848,7 @@ function initSyncTip(){
     try{ if(localStorage.getItem("mercs.v1.synctip")) return; }catch(e){}
     if(ACCOUNT || document.getElementById("syncTip")) return;
     const bar=document.createElement("div"); bar.id="syncTip";
-    bar.innerHTML=`<span class="stx"><b>Sync across your devices</b> &mdash; sign in to keep your favorites, teams &amp; trackers on every device. Optional, anytime.</span>`+
+    bar.innerHTML=`<span class="stx"><b>Sync across your devices</b>: sign in to keep your favorites, teams &amp; trackers on every device. Optional, anytime.</span>`+
       `<button class="stgo" id="stGo">Sign in</button><button class="stx-close" id="stX" aria-label="Dismiss">&#10005;</button>`;
     const done=()=>{ try{localStorage.setItem("mercs.v1.synctip","1");}catch(e){} if(bar.parentNode)bar.parentNode.removeChild(bar); };
     document.body.appendChild(bar);

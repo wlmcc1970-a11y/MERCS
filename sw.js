@@ -1,8 +1,9 @@
 /* MERCS Companion — service worker. DigiRune Studios. */
-const CACHE="mercs-v30";
+const CACHE="mercs-v31";
 const MEDIA="mercs-media-v1";   // card images live here — a STABLE cache the shell version bump never purges, so a code update no longer wipes/re-downloads the ~28 MB of images
 const SHELL=[
   "./","index.html","manifest.json","data.js","app.js","auth.js","privacy.html",
+  "polish/pk.css","polish/pk.js","polish/mercs-polish.css","polish/mercs-polish.js",
   "assets/logo_white.png","assets/logo_black.png","assets/cover.png","assets/opscover.png",
   "icons/icon-192.png","icons/icon-512.png","icons/apple-touch-icon.png",
   "https://fonts.googleapis.com/css2?family=Black+Ops+One&family=Bungee&family=DM+Sans:wght@400;500;600;700&display=swap"
@@ -323,7 +324,7 @@ self.addEventListener("activate",e=>{
       }
     }
     // Keep only the current shell (CACHE) and the persistent images (MEDIA); drop everything else.
-    await Promise.all(keys.filter(k=>k!==CACHE&&k!==MEDIA).map(k=>caches.delete(k)));
+    await Promise.all(keys.filter(k=>k!==CACHE&&k!==MEDIA&&k!==ART_CACHE).map(k=>caches.delete(k)));
     await self.clients.claim();
     // Fill any gaps in MEDIA (skips anything already rescued above — no needless re-download).
     precacheImages();
@@ -361,6 +362,7 @@ self.addEventListener("message",e=>{
 });
 
 self.addEventListener("fetch",e=>{
+  if (pkArtResponse(e)) return;   /* Polish Kit art folder (F-190) */
   const req=e.request;
   if(req.method!=="GET")return;
   const url=new URL(req.url);
@@ -398,3 +400,58 @@ self.addEventListener("fetch",e=>{
     }))
   );
 });
+
+
+/* ===== Polish Kit art folder (F-190) ===== */
+/* DigiRune Polish Kit v1.0.1 - pk-sw-art.js
+   The art folder rule (Will, 2026-09-26): an app may keep a small art/ folder beside its single
+   HTML file. Every file in it is precached at install so the app still works fully offline.
+   Paste into the app's current service worker, sw-v[N].js (never importScripts: the manifest tool writes into
+   that file). Create the new sw-v[N+1].js first, then run tools/pk-art-manifest.py, which writes ART_FILES and a
+   content hash for ART_VERSION into the highest-numbered sw-v[N].js it finds.
+
+   Rules:
+   - The app's own activate handler deletes every cache except app-shell-v[N] AND the current ART_CACHE
+     (chassis Gate 2.4 as amended by F-190): keep both, or the art is thrown away on every deploy.
+   - ART_VERSION changes whenever any art file changes, so old art is dropped cleanly.
+   - Art is cache-first (instant, offline); a missing file fails honestly, never returns HTML.
+   - Precache bypasses the HTTP cache (cache:'reload'), so a changed file is never stored stale.
+   - Keep the folder small: WebP/AVIF only, at most 400 KB a file, heroes about 1400px wide. */
+
+const ART_VERSION = 'art-b3ca9a4c17';          // replaced by the build script
+const ART_FILES = ["./art/hero-battle.webp", "./art/units/ccc-breacher.webp", "./art/units/ccc-demo.webp", "./art/units/ccc-gunner.webp", "./art/units/ccc-heavy.webp", "./art/units/ccc-incinerator.webp", "./art/units/ccc-jammer.webp", "./art/units/ccc-leader.webp", "./art/units/ccc-medic.webp", "./art/units/ccc-sniper.webp", "./art/units/ccc-spotter.webp", "./art/units/eic-assimilator.webp", "./art/units/eic-breacher.webp", "./art/units/eic-demo.webp", "./art/units/eic-engineer.webp", "./art/units/eic-heavy.webp", "./art/units/eic-jammer.webp", "./art/units/eic-leader.webp", "./art/units/eic-pathfinder.webp", "./art/units/eic-shock.webp", "./art/units/eic-sniper.webp", "./art/units/eu-analyst.webp", "./art/units/eu-demo.webp", "./art/units/eu-heavy.webp", "./art/units/eu-leader.webp", "./art/units/eu-medic.webp", "./art/units/eu-sergeant.webp", "./art/units/eu-shock.webp", "./art/units/eu-sniper.webp", "./art/units/eu-spotter.webp", "./art/units/eu-wrench.webp", "./art/units/gcc-agent.webp", "./art/units/gcc-breacher.webp", "./art/units/gcc-chief.webp", "./art/units/gcc-demo.webp", "./art/units/gcc-drone.webp", "./art/units/gcc-heavy.webp", "./art/units/gcc-jammer.webp", "./art/units/gcc-judge.webp", "./art/units/gcc-recorder.webp", "./art/units/gcc-sniper.webp", "./art/units/gcc-tribunal.webp", "./art/units/house4-breacher.webp", "./art/units/house4-demo.webp", "./art/units/house4-engineer.webp", "./art/units/house4-heavy.webp", "./art/units/house4-medic.webp", "./art/units/house4-priest.webp", "./art/units/house4-shock.webp", "./art/units/house4-sniper.webp", "./art/units/house4-steward.webp", "./art/units/house4-survivalist.webp", "./art/units/house9-bedouin.webp", "./art/units/house9-boomer.webp", "./art/units/house9-engineer.webp", "./art/units/house9-jammer.webp", "./art/units/house9-liason.webp", "./art/units/house9-master.webp", "./art/units/house9-medic.webp", "./art/units/house9-saboteur.webp", "./art/units/house9-shock.webp", "./art/units/house9-spy.webp", "./art/units/iss-calypso.webp", "./art/units/iss-demo.webp", "./art/units/iss-heavy.webp", "./art/units/iss-jammer.webp", "./art/units/iss-leader.webp", "./art/units/iss-shock.webp", "./art/units/iss-sniper.webp", "./art/units/iss-spy.webp", "./art/units/iss-turret.webp", "./art/units/iss-wavefinder.webp", "./art/units/iss-wrench.webp", "./art/units/keizaiwaza-daimyo.webp", "./art/units/keizaiwaza-demo.webp", "./art/units/keizaiwaza-heavy.webp", "./art/units/keizaiwaza-jammer.webp", "./art/units/keizaiwaza-observer.webp", "./art/units/keizaiwaza-pathfinder.webp", "./art/units/keizaiwaza-sniper.webp", "./art/units/keizaiwaza-spotter.webp", "./art/units/keizaiwaza-spy.webp", "./art/units/keizaiwaza-wrench.webp", "./art/units/kemvar-assassin.webp", "./art/units/kemvar-demo.webp", "./art/units/kemvar-engineer.webp", "./art/units/kemvar-heavy.webp", "./art/units/kemvar-jammer.webp", "./art/units/kemvar-leader.webp", "./art/units/kemvar-shock.webp", "./art/units/kemvar-sniper.webp", "./art/units/kemvar-spy.webp", "./art/units/kemvar-wrench.webp", "./art/units/sefadu-berserker.webp", "./art/units/sefadu-demo.webp", "./art/units/sefadu-engineer.webp", "./art/units/sefadu-gunner.webp", "./art/units/sefadu-heavy.webp", "./art/units/sefadu-leader.webp", "./art/units/sefadu-medic.webp", "./art/units/sefadu-pathfinder.webp", "./art/units/sefadu-shock.webp", "./art/units/sefadu-sniper.webp", "./art/units/texico-breacher.webp", "./art/units/texico-demo.webp", "./art/units/texico-dog.webp", "./art/units/texico-eagle.webp", "./art/units/texico-engineer.webp", "./art/units/texico-heavy.webp", "./art/units/texico-jaguar.webp", "./art/units/texico-leader.webp", "./art/units/texico-marshal.webp", "./art/units/texico-ranger.webp", "./art/units/texico-sniper.webp", "./art/units/uscr-behemoth.webp", "./art/units/uscr-commissar.webp", "./art/units/uscr-engineer.webp", "./art/units/uscr-gunner.webp", "./art/units/uscr-heavy.webp", "./art/units/uscr-jammer.webp", "./art/units/uscr-medic.webp", "./art/units/uscr-pathfinder.webp", "./art/units/uscr-sniper.webp", "./art/units/uscr-wrench.webp"];                   // e.g. ['./art/hero-rules.webp', './art/unit-sniper.webp']
+const ART_CACHE = 'pk-' + ART_VERSION;
+
+self.addEventListener('install', function(e){
+  if (!ART_FILES.length) return;
+  /* MERCS release note (2026-09-28): one file at a time, never addAll, so a single missing or slow art file
+     can never block this update from installing (same rule as the app shell above). A file that misses here
+     is fetched and cached the first time it is shown. */
+  e.waitUntil(caches.open(ART_CACHE).then(function(c){
+    return Promise.allSettled(ART_FILES.map(function(u){ return c.add(new Request(u, {cache:'reload'})); }));
+  }));
+});
+
+self.addEventListener('activate', function(e){
+  e.waitUntil(caches.keys().then(function(keys){
+    return Promise.all(keys.filter(function(k){ return k.indexOf('pk-art-') === 0 && k !== ART_CACHE; })
+      .map(function(k){ return caches.delete(k); }));
+  }));
+});
+
+/* Call from the app's own fetch handler BEFORE its generic rule:
+     if (pkArtResponse(e)) return;                                      */
+function pkArtResponse(e){
+  if (e.request.method !== 'GET') return false;
+  var u = new URL(e.request.url);
+  if (u.origin !== self.location.origin || !/\/art\//.test(u.pathname)) return false;
+  e.respondWith(caches.open(ART_CACHE).then(function(c){
+    return c.match(e.request, {ignoreSearch:true}).then(function(hit){
+      return hit || fetch(e.request).then(function(res){
+        if (res && res.status === 200) c.put(e.request, res.clone());
+        return res;
+      }).catch(function(){ return new Response('', {status:504, statusText:'Offline'}); });
+    });
+  }));
+  return true;
+}
