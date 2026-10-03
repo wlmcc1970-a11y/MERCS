@@ -115,6 +115,7 @@ header.bar{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:
 .asi-btn svg{margin-top:-2px}
 .btn.danger{background:#7a1f1f;color:#fff;border-color:#9b2b2b}
 .btn.danger:active{background:#611818}
+.btn.armed,.btn.ghost.armed{background:#7a1f1f;color:#fff;border-color:#9b2b2b}
 /* --- first-run sync tip (once-only, dismissible) --- */
 #syncTip{position:fixed;left:50%;transform:translateX(-50%);top:calc(env(safe-area-inset-top,0px) + 10px);z-index:1200;max-width:94%;width:430px;display:flex;align-items:center;gap:.55rem;background:rgba(18,30,28,.96);border:1px solid rgba(31,169,190,.45);border-radius:12px;padding:.58rem .7rem;box-shadow:0 10px 30px rgba(0,0,0,.4);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
 #syncTip .stx{flex:1;font-size:.77rem;line-height:1.4;color:#d7e6e2}
@@ -556,6 +557,10 @@ footer.src{padding-bottom:calc(1.4rem + var(--tabbar-h) + var(--safe-b))}
 
 /* search deep-link highlight pulse (restored) */
 .rec-hl{animation:recpulse 2s ease-out 1}
+.glo{scroll-margin-top:calc(76px + var(--safe-t,0px))}
+mark.rule-hit{background:transparent;color:inherit;border-radius:3px;padding:0 1px}
+mark.rule-hit.rule-hit-on{animation:rulehit 2.4s ease-out 1}
+@keyframes rulehit{0%,40%{background:rgba(242,205,58,.75);color:#111a18;box-shadow:0 0 0 2px var(--orange)}100%{background:transparent;box-shadow:0 0 0 2px transparent}}
 @keyframes recpulse{0%{box-shadow:0 0 0 0 rgba(242,205,58,.0);outline:2px solid rgba(242,205,58,0)}12%{box-shadow:0 0 0 4px rgba(242,205,58,.45);outline:2px solid var(--orange)}100%{box-shadow:0 0 0 0 rgba(242,205,58,0);outline:2px solid rgba(242,205,58,0)}}
 
 .ucls{margin-left:.4rem;background:transparent;border:1px solid var(--line2);color:var(--muted);border-radius:8px;min-width:36px;min-height:36px;font-size:1rem;line-height:1;cursor:pointer;position:relative}

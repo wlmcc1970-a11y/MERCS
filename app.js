@@ -83,13 +83,15 @@ function flowInline(s){
 }
 
 /* ---------- persistence: clean-slate by default; optional device save or cloud sync ----------
-   ACCOUNT: null (guest, in-memory only) | {mode:'device'} | {mode:'cloud',uid,provider,name,email,photo}
+   ACCOUNT: null (guest, in-memory only) | {mode:'device'} | {mode:'device',auto:true} | {mode:'cloud',uid,provider,name,email,photo}
+   {mode:'device',auto:true} = automatic device save for a first-time player (SAVE_MODE 'auto'): saves like device
+   mode but the account UI still looks like a guest, so nothing a new player sees changes except that work survives.
    Cloud sign-in (Google/Apple via Firebase Auth) mirrors the whole SESSION object to Firestore for
    cross-device sync; that layer lives in auth.js (window.__mercsSync) and loads right after this file.
    Every non-sync feature stays fully offline. ---------- */
 let SESSION={}; let ACCOUNT=null;
 const SAVE_LOCAL="mercs.v1.session";   // single local blob: device save + cloud mirror
-const SAVE_MODE ="mercs.v1.mode";      // 'device' | 'cloud' — remembered to resume on next launch
+const SAVE_MODE ="mercs.v1.mode";      // 'device' | 'cloud' | 'auto' — remembered to resume on next launch
 const SAVE_DEVICE="mercs.v1.device";   // stable per-device id (live-sync echo guard)
 const SAVE_ACCT ="mercs.v1.acct";      // cached cloud account label for offline display (S1)
 const SAVE_BASE ="mercs.v1.base";      // last SESSION confirmed in sync with cloud — the 3-way merge base (S1/S2)
@@ -110,6 +112,11 @@ function hasLocalData(){ try{return !!(SESSION&&Object.keys(SESSION).length);}ca
 /* resume the saved mode on launch (cloud is re-established async by auth.js onAuthStateChanged) */
 function restoreSession(){ let m=null; try{m=localStorage.getItem(SAVE_MODE);}catch(e){}
   if(m==='device'){ ACCOUNT={mode:'device'}; loadLocalSession(); }
+  else if(m==='auto'){ ACCOUNT={mode:'device',auto:true}; loadLocalSession(); }
+  else if(m==null){ /* first-time player: save on this device automatically. A leftover blob with no mode means the player
+       signed out earlier, so that device stays a plain guest exactly as before. */
+    let had=false; try{had=localStorage.getItem(SAVE_LOCAL)!=null;}catch(e){}
+    if(!had){ ACCOUNT={mode:'device',auto:true}; try{localStorage.setItem(SAVE_MODE,'auto');}catch(e){} } }
   else if(m==='cloud'){ /* S1: show the cloud mirror immediately (esp. offline); auth.js reconciles when Firebase loads */
     ACCOUNT={mode:'cloud',pending:true};
     try{const a=JSON.parse(localStorage.getItem(SAVE_ACCT)||'null'); if(a){ACCOUNT.name=a.name||'';ACCOUNT.email=a.email||'';ACCOUNT.photo=a.photo||'';}}catch(e){}
@@ -134,16 +141,23 @@ function updateAccountUI(){
     b.classList.remove("in","dev");
     let lbl="Sign in", aria="Sign in to sync";
     if(ACCOUNT&&ACCOUNT.mode==='cloud'){ lbl=esc(String(ACCOUNT.name||ACCOUNT.email||"Account").split(" ")[0]); b.classList.add("in"); aria="Signed in as "+lbl; }
-    else if(ACCOUNT&&ACCOUNT.mode==='device'){ lbl="Saved"; b.classList.add("dev"); aria="Saved on this device"; }
+    else if(ACCOUNT&&ACCOUNT.mode==='device'&&!ACCOUNT.auto){ lbl="Saved"; b.classList.add("dev"); aria="Saved on this device"; }
     b.innerHTML='<span class="sdot" aria-hidden="true"></span><span class="albl">'+lbl+'</span>';
     b.setAttribute("aria-label",aria);
   }
   const nl=document.querySelector('#navActs [data-act="account"] span:last-child');
-  if(nl){ nl.textContent = (ACCOUNT&&ACCOUNT.mode==='cloud') ? String(ACCOUNT.name||"Account").split(" ")[0] : (ACCOUNT&&ACCOUNT.mode==='device') ? "Saved on device" : "Sign In"; }
+  if(nl){ nl.textContent = (ACCOUNT&&ACCOUNT.mode==='cloud') ? String(ACCOUNT.name||"Account").split(" ")[0] : (ACCOUNT&&ACCOUNT.mode==='device'&&!ACCOUNT.auto) ? "Saved on device" : "Sign In"; }
 }
 
 /* ---------- toast (3000ms, one at a time) ---------- */
 function toast(m){const t=$("#toast");t.textContent=m;t.classList.add("show");clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove("show"),3000);}
+
+/* ---------- two-tap confirm for destructive buttons (built into the page; window.confirm can be blocked in the wrapped apps).
+   First tap arms the button ("Tap again to clear") for 3 seconds; a second tap inside that window runs fn. ---------- */
+function armClear(b,fn){ if(!b)return;
+  b.onclick=()=>{ if(b._armed){ clearTimeout(b._armT); b._armed=false; b.classList.remove("armed"); b.textContent=b._lbl; fn(); return; }
+    b._lbl=b.textContent; b._armed=true; b.classList.add("armed"); b.textContent="Tap again to clear";
+    b._armT=setTimeout(()=>{ b._armed=false; b.classList.remove("armed"); b.textContent=b._lbl; },3000); }; }
 
 /* ---------- misc ---------- */
 function cap(s){return String(s).replace(/\b\w/g,c=>c.toUpperCase()).replace(/\bMercs\b/i,"MERCS");}
@@ -445,7 +459,8 @@ builders.home=function(p){
   const tools=[
    {id:"codex",t:"Codex",ico:ICO.shield},{id:"round",t:"Round Tracker",ico:ICO.bolt},
    {id:"opsetup",t:"Operation Setup",ico:ICO.target},{id:"draw",t:"Contingency Draw",ico:ICO.cards},
-   {id:"damage",t:"Damage & Armor",ico:ICO.heart},{id:"strike",t:"Strike Team",ico:ICO.squad}
+   {id:"damage",t:"Damage & Armor",ico:ICO.heart},{id:"strike",t:"Strike Team",ico:ICO.squad},
+   {id:"compare",t:"Compare Units",ico:ICO.compare},{id:"favorites",t:"Favorites",ico:ICO.star}
   ];
   p.innerHTML=`
    <div class="splash hero">
@@ -775,6 +790,8 @@ builders.rules=function(p){
   const apply=m=>{CUR_MODE=m;Store.set("rulesMode",m);$$("#rulesSeg .segb",p).forEach(b=>b.classList.toggle("on",b.dataset.m===m));showContents();};
   $$("#rulesSeg .segb",p).forEach(b=>b.onclick=()=>apply(b.dataset.m));
   apply(mode);
+  if(RULE_PENDING){ const r=RULE_PENDING; RULE_PENDING=null;
+    if(Date.now()-r.t<5000){ p._ruleOpen(r.mode,r.slug); ruleJump(r.slug,r.q,r.faq); } }
 };
 
 /* ===================== MODIFIERS ===================== */
@@ -903,7 +920,7 @@ function toolRound(v){
   $("#rdAdd",v).onclick=()=>{roster.push({i:+$("#rdUnit",v).value,roll:null,mod:0,done:false});draw();};
   $("#rdRoll",v).onclick=()=>{roster.forEach(r=>{const u=DATA.units[r.i];r.roll=d10();r.mod=clampMod(u.stats.IM,r.mod??0);});draw();toast("Initiative rolled");};
   $("#rdNext",v).onclick=()=>{round++;roster.forEach(r=>{r.done=false;r.roll=null;r.mod=0;});draw();};
-  $("#rdClear",v).onclick=()=>{roster=[];round=1;draw();toast("Round tracker cleared");};
+  armClear($("#rdClear",v),()=>{roster=[];round=1;draw();toast("Round tracker cleared");});
   fillUnits();draw();
 }
 
@@ -1034,7 +1051,7 @@ function toolStrike(v){
       if(team.members.some(m=>DATA.units[m].archetype===arch)){toast("That archetype is already on the team.");return;}
       team.members.push(i);save();render();};
     $$("[data-rem]",v).forEach(b=>b.onclick=()=>{team.members.splice(+b.dataset.rem,1);save();render();});
-    $("#stClear",v).onclick=()=>{team.members=[];save();render();toast("Team cleared");};
+    armClear($("#stClear",v),()=>{team.members=[];save();render();toast("Team cleared");});
   }
   render();
 }
@@ -1133,6 +1150,7 @@ function toolCompare(v){
    UNIVERSAL: SEARCH (cross-tab, debounced 200ms, grouped, highlighted)
    ============================================================ */
 let SEARCH_INDEX=null;
+let SEARCH_Q="";   // the query behind the result being opened, so a rules result can land on the first match
 
 /* ---- DEEP-LINK helpers: navigate, render the right sub-context, then scroll+pulse the record ---- */
 /* Panels build lazily; after navTo/draw, query the id on the next frame and scroll it into view. */
@@ -1141,11 +1159,8 @@ function scrollToRecord(id){
     const elx=document.getElementById(id);
     if(!elx)return false;
     elx.scrollIntoView({behavior:"smooth",block:"start"});
-    elx.classList.remove("rec-hl");
-    // force reflow so re-adding the class restarts the animation
-    void elx.offsetWidth;
-    elx.classList.add("rec-hl");
-    setTimeout(()=>{elx&&elx.classList.remove("rec-hl");},2000);
+    // pulse once the smooth scroll has arrived (a pulse that runs mid-scroll is never seen)
+    pulseWhenSettled(elx,"rec-hl",pageScroller());
     return true;
   };
   // wait one frame for the lazy builder to paint, retry a few times if needed
@@ -1183,16 +1198,55 @@ function deepGoOp(i){
   navTo("operations");
   requestAnimationFrame(()=>scrollToRecord("rec-op-"+DATA.operations[i].id));
 }
-function deepGoRule(slug,mode){
+/* The polish layer runs navTo inside a View Transition, so the rules panel can be built AFTER this function
+   returns. The target is handed to builders.rules (RULE_PENDING), which opens the section once it has built. */
+let RULE_PENDING=null;
+function deepGoRule(slug,mode,faq){
   mode=mode||"core";
+  RULE_PENDING={mode,slug,q:SEARCH_Q,faq,t:Date.now()};
   Store.set("rulesMode",mode);
   rebuildPanel("rules");
   navTo("rules");
-  requestAnimationFrame(()=>{
-    const panel=$("#panel-rules");
-    if(panel&&panel._ruleOpen)panel._ruleOpen(mode,slug);
-    scrollToRecord("rec-rule-"+slug);
-  });
+}
+/* after the section renders: scroll so the first match of the search (else the section) sits below the sticky header, then pulse it */
+function ruleJump(slug,q,faq){
+  let tries=0;
+  const tick=()=>{
+    const sec=document.getElementById("rec-rule-"+slug);
+    if(!sec||!sec.offsetParent){ if(tries++<40)requestAnimationFrame(tick); return; }
+    let root=sec; if(faq!=null){ const f=sec.querySelectorAll(".faq")[faq]; if(f)root=f; }
+    const m=q?markFirst(root,q):null;
+    const target=m||root;
+    const hdr=document.querySelector("header.bar");
+    const hb=hdr?Math.max(0,hdr.getBoundingClientRect().bottom):0;
+    const dy=target.getBoundingClientRect().top-hb-(m?Math.max(56,Math.round((window.innerHeight-hb)*0.18)):12);
+    const s=pageScroller();
+    try{ s.scrollBy({top:dy,behavior:"smooth"}); }catch(e){ s.scrollTop+=dy; }
+    pulseWhenSettled(target,m?"rule-hit-on":"rec-hl",s);
+  };
+  requestAnimationFrame(tick);
+}
+/* wrap the first text match of q inside root in <mark class="rule-hit"> (text itself is untouched) */
+function markFirst(root,q){
+  const lc=String(q).toLowerCase();if(!lc)return null;
+  const w=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);let n;
+  while((n=w.nextNode())){
+    const i=n.nodeValue.toLowerCase().indexOf(lc);
+    if(i<0)continue;
+    try{ const r=document.createRange();r.setStart(n,i);r.setEnd(n,i+lc.length);
+      const mk=document.createElement("mark");mk.className="rule-hit";r.surroundContents(mk);return mk; }catch(e){ return null; }
+  }
+  return null;
+}
+/* start the highlight once the smooth scroll has arrived, so the player actually sees it */
+function pulseWhenSettled(el,cls,s){
+  let done=false;
+  const go=()=>{ if(done)return; done=true;
+    el.classList.remove(cls); void el.offsetWidth; el.classList.add(cls);
+    setTimeout(()=>{ el&&el.classList.remove(cls); },2400); };
+  const tgt=(s===document.scrollingElement||s===document.documentElement)?window:s;
+  try{ tgt.addEventListener("scrollend",go,{once:true}); }catch(e){}
+  setTimeout(go,900);
 }
 /* deep-link → a Modifier table */
 function deepGoModifier(slug){navTo("modifiers");requestAnimationFrame(()=>scrollToRecord("rec-mod-"+slug));}
@@ -1241,7 +1295,7 @@ function buildSearchIndex(){
   if(DATA.rules.recon){const r=DATA.rules.recon;
     if(r.faq&&r.faq.length){
       idx.push({type:"Rule",key:"rec-rule-recon-faq",label:"Recon: Frequently Asked Questions",sub:"Recon Add-On",text:"Recon FAQ "+r.faq.map(x=>x.q+" "+x.a).join(" "),go:()=>deepGoRule("recon-faq","recon")});
-      r.faq.forEach(x=>idx.push({type:"Rule",key:"rec-rule-recon-faq",label:cleanRuleText(x.q),sub:"Recon FAQ",text:cleanRuleText(x.q)+" "+cleanRuleText(x.a),go:()=>deepGoRule("recon-faq","recon")}));
+      r.faq.forEach((x,fi)=>idx.push({type:"Rule",key:"rec-rule-recon-faq",label:cleanRuleText(x.q),sub:"Recon FAQ",text:cleanRuleText(x.q)+" "+cleanRuleText(x.a),go:()=>deepGoRule("recon-faq","recon",fi)}));
     }
     (r.addOns||[]).forEach(x=>idx.push({type:"Rule",key:"rec-rule-recon-add-"+SLUG(x.title),label:"Recon: "+x.title,sub:"Recon Add-On",text:"Recon "+x.title+" "+cleanRuleText(x.body),go:()=>deepGoRule("recon-add-"+SLUG(x.title),"recon")}));
     (r.rulesRevised||[]).forEach(x=>idx.push({type:"Rule",key:"rec-rule-recon-rev-"+SLUG(x.title),label:"Recon: "+x.title,sub:"Recon Rules Revised",text:"Recon "+x.title+" "+cleanRuleText(x.body),go:()=>deepGoRule("recon-rev-"+SLUG(x.title),"recon")}));
@@ -1290,7 +1344,7 @@ function runSearch(q){q=q.trim();const out=$("#searchResults");
   out.innerHTML=present.map(t=>`<div class="sgrp"><div class="sgh">${esc(PLURAL[t]||t)} <span>${groups[t].length}</span></div>
     ${groups[t].map(h=>`<button class="sres" data-i="${SEARCH_INDEX.indexOf(h)}">
       <span class="sl" translate="no">${hl(h.label,q)}</span><span class="ss" translate="no">${esc(h.sub)}</span></button>`).join("")}</div>`).join("");
-  $$("#searchResults .sres",out).forEach(b=>b.onclick=()=>{const r=SEARCH_INDEX[+b.dataset.i];closeSearch();r.go();});
+  $$("#searchResults .sres",out).forEach(b=>b.onclick=()=>{const r=SEARCH_INDEX[+b.dataset.i];closeSearch();SEARCH_Q=q;r.go();SEARCH_Q="";});
 }
 
 /* ============================================================
@@ -1787,7 +1841,7 @@ function openAccount(){
     $("#acOut").onclick=()=>{signOut();popClose();};
     $("#acDelete").onclick=()=>confirmDeleteAccount();
     const _p=$("#acPriv"); if(_p)_p.onclick=(e)=>{e.preventDefault();popClose();openAbout();};
-  }else if(A&&A.mode==='device'){
+  }else if(A&&A.mode==='device'&&!A.auto){
     popOpen(`<h4>Saved on this device</h4>
       <p class="small muted">Your selections are saved on <b>this device</b> only. Sign in to sync them across all your devices.</p>
       <div class="signin-official">
@@ -1843,10 +1897,10 @@ function initLaunchSplash(){
 /* ---------- first-run tip: sign-in syncs across devices (optional) — Forge CHECK 1.5 ---------- */
 function initSyncTip(){
   try{ if(localStorage.getItem("mercs.v1.synctip")) return; }catch(e){}
-  if(ACCOUNT) return;                       // already saving/synced -> no prompt
+  if(ACCOUNT&&!ACCOUNT.auto) return;        // already saving/synced -> no prompt (auto device save still gets the tip)
   setTimeout(()=>{
     try{ if(localStorage.getItem("mercs.v1.synctip")) return; }catch(e){}
-    if(ACCOUNT || document.getElementById("syncTip")) return;
+    if((ACCOUNT&&!ACCOUNT.auto) || document.getElementById("syncTip")) return;
     const bar=document.createElement("div"); bar.id="syncTip";
     bar.innerHTML=`<span class="stx"><b>Sync across your devices</b>: sign in to keep your favorites, teams &amp; trackers on every device. Optional, anytime.</span>`+
       `<button class="stgo" id="stGo">Sign in</button><button class="stx-close" id="stX" aria-label="Dismiss">&#10005;</button>`;
