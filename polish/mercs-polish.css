@@ -276,8 +276,10 @@ html[data-theme="dark"] .offbar{background:rgba(34,64,58,.96);border:0}
 body:has(.offbar.show) .toast{bottom:calc(var(--pk-dock,0px) + 1rem + var(--safe-b))}
 body:has(#syncTip) .toast{bottom:calc(var(--pk-dock,0px) + 1rem + var(--safe-b) + var(--tip-h,96px))}
 /* status lines built from short parts wrap between whole parts, never leaving a separator at the start of a line */
-.listbar .lbtxt .lbseg{white-space:nowrap}
-.listbar .lbtxt .lbseg+.lbseg{padding-left:.55rem;border-left:1px solid var(--line2)}
+.listbar .lbtxt:has(.lbseg){overflow:hidden;column-gap:.8rem}
+.listbar .lbtxt .lbseg{white-space:nowrap;position:relative}
+/* divider sits in the gap; a part that starts a new line pushes its divider past the left edge, where it is clipped */
+.listbar .lbtxt .lbseg+.lbseg::before{content:"";position:absolute;left:-.42rem;top:.25em;bottom:.25em;width:1px;background:var(--line2)}
 /* tool bar: "Tools" back button and the tool name each stay on one line at 360px */
 .backbtn{white-space:nowrap;flex:none}
 .toolsbar h2{white-space:nowrap;min-width:0;font-size:min(1rem,4.1vw)}
