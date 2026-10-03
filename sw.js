@@ -1,5 +1,5 @@
 /* MERCS Companion — service worker. DigiRune Studios. */
-const CACHE="mercs-v31";
+const CACHE="mercs-v32";
 const MEDIA="mercs-media-v1";   // card images live here — a STABLE cache the shell version bump never purges, so a code update no longer wipes/re-downloads the ~28 MB of images
 const SHELL=[
   "./","index.html","manifest.json","data.js","app.js","auth.js","privacy.html",

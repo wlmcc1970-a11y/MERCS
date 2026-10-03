@@ -371,7 +371,7 @@ const ICO={
    ROUTER — 7 content tabs as lazy-built panels
    ============================================================ */
 /* Visible app version (About screen). Bump together with CACHE="mercs-vNN" in sw.js on every release. */
-const APP_VERSION="31";
+const APP_VERSION="32";
 const TABS=[
  {id:"home",t:"Home",ico:ICO.home},
  {id:"megacons",t:"MegaCons",ico:ICO.mega},
