@@ -59,7 +59,7 @@ function ruleProse(seg){
   let html="";
   for(let i=0;i<chunks.length;i++){
     if(i%2===1){ html+="<h4 class=\"rsub\">"+esc(chunks[i].trim())+"</h4>"; }
-    else { const txt=chunks[i].trim(); if(txt) html+=paragraphize(txt).map(pp=>"<p class=\"bodytext\">"+nobrHy(esc(pp))+"</p>").join(""); }
+    else { const txt=chunks[i].trim(); if(txt) html+=paragraphize(txt).map(pp=>"<p class=\"bodytext\">"+nwHy(esc(pp))+"</p>").join(""); }
   }
   return html;
 }
@@ -71,7 +71,7 @@ function escProse(s){
   return norm.split(/\n[ \t]*\n+/).map(par=>{
     const flowed=par.replace(/[ \t]*\n[ \t]*/g," ").trim();
     if(!flowed) return "";
-    return paragraphize(flowed).map(pp=>"<p class=\"bodytext\">"+nobrHy(esc(pp))+"</p>").join("");
+    return paragraphize(flowed).map(pp=>"<p class=\"bodytext\">"+nwHy(esc(pp))+"</p>").join("");
   }).filter(Boolean).join("");
 }
 /* flowInline — same reflow as escProse but inline (paragraph breaks become <br><br>),
@@ -96,6 +96,7 @@ const SAVE_DEVICE="mercs.v1.device";   // stable per-device id (live-sync echo g
 const SAVE_ACCT ="mercs.v1.acct";      // cached cloud account label for offline display (S1)
 const SAVE_BASE ="mercs.v1.base";      // last SESSION confirmed in sync with cloud — the 3-way merge base (S1/S2)
 const SAVE_DV   ="mercs.v1.dv";        // data-schema version stamp guarding index-based saves (S4)
+const SAVE_NOSAVE="mercs.v1.nosave";   // '1' = the player chose to stop saving on this device: never switch auto-save back on
 const DATA_VERSION=1;                  // bump when DATA arrays are reordered / units removed
 function syncBaseGet(){ try{return JSON.parse(localStorage.getItem(SAVE_BASE)||'{}')||{};}catch(e){return {};} }
 function syncBaseSet(o){ try{localStorage.setItem(SAVE_BASE,JSON.stringify(o||{}));}catch(e){} }
@@ -115,7 +116,7 @@ function restoreSession(){ let m=null; try{m=localStorage.getItem(SAVE_MODE);}ca
   else if(m==='auto'){ ACCOUNT={mode:'device',auto:true}; loadLocalSession(); }
   else if(m==null){ /* first-time player: save on this device automatically. A leftover blob with no mode means the player
        signed out earlier, so that device stays a plain guest exactly as before. */
-    let had=false; try{had=localStorage.getItem(SAVE_LOCAL)!=null;}catch(e){}
+    let had=false; try{had=localStorage.getItem(SAVE_LOCAL)!=null||localStorage.getItem(SAVE_NOSAVE)==="1";}catch(e){}
     if(!had){ ACCOUNT={mode:'device',auto:true}; try{localStorage.setItem(SAVE_MODE,'auto');}catch(e){} } }
   else if(m==='cloud'){ /* S1: show the cloud mirror immediately (esp. offline); auth.js reconciles when Firebase loads */
     ACCOUNT={mode:'cloud',pending:true};
@@ -125,16 +126,22 @@ function restoreSession(){ let m=null; try{m=localStorage.getItem(SAVE_MODE);}ca
   } }
 /* device-only save (no cloud) — keeps any current in-memory guest selections */
 function signInDevice(){ if(!hasLocalData())loadLocalSession(); ACCOUNT={mode:'device'};
-  try{localStorage.setItem(SAVE_MODE,'device');}catch(e){} persistLocal(); updateAccountUI(); rebuildAll(); toast("Saving on this device"); }
+  try{localStorage.setItem(SAVE_MODE,'device');localStorage.removeItem(SAVE_NOSAVE);}catch(e){} persistLocal(); updateAccountUI(); rebuildAll(); toast("Saving on this device"); }
 /* sign out of whichever mode is active */
 function signOut(){
   if(ACCOUNT&&ACCOUNT.mode==='cloud'){
     if(ACCOUNT.pending){ toast("Sign-out isn't ready yet. Try again in a moment"); return; }  /* S1/F3: cloud not yet established this launch (offline or still loading) — don't silently no-op */
     if(window.__mercsSync){ window.__mercsSync.signOutCloud(); return; }
   }
-  ACCOUNT=null; try{localStorage.removeItem(SAVE_MODE);}catch(e){}
-  updateAccountUI(); toast("Signed out. This session won't be saved");
+  /* device save (chosen or automatic): stop saving AND delete this device's saved copy (cloud data is never touched here) */
+  ACCOUNT=null; clearDeviceSave();
+  updateAccountUI(); toast("Stopped saving. Saved data removed from this device");
 }
+/* remove the on-device save and remember the choice, so the next launch stays a plain guest (no silent auto-save) */
+function clearDeviceSave(){ [SAVE_LOCAL,SAVE_BASE,SAVE_DV,SAVE_MODE].forEach(k=>{try{localStorage.removeItem(k);}catch(e){}});
+  try{localStorage.setItem(SAVE_NOSAVE,"1");}catch(e){} }
+/* auto-save players: clear everything saved on this device and stop saving; selections on screen are cleared too */
+function clearSavedData(){ ACCOUNT=null; clearDeviceSave(); SESSION={}; updateAccountUI(); rebuildAll(); toast("Saved data cleared from this device"); }
 function updateAccountUI(){
   const b=$("#acctBtn");
   if(b){
@@ -276,9 +283,12 @@ const MANUAL={
    "Keyword names also appear on unit weapons; tap them there to pop the definition."],
    tip:"37 Keywords and 60 Personal Abilities, transcribed verbatim."}
 };
+/* keep the last two words of a Field Manual line together so no line ends with one word alone at any width
+   (layout only: a nowrap span, the text is unchanged). Skipped when the tail is inside markup. */
+function glueEnd(h){return String(h).replace(/([^\s<>]+) ([^\s<>]+)$/,'<span class="nw">$1 $2</span>');}
 function manual(id){const m=MANUAL[id];if(!m)return "";
   return `<details class="manual ${manualCue()}"><summary><span class="mico">${ICO.book}</span><span class="mttl">How to use this page</span><span class="tw">&#9656;</span></summary>
-    <div class="mbody"><ol>${m.steps.map(s=>`<li>${s}</li>`).join("")}</ol>${m.tip?`<div class="tip">&#9733; ${m.tip}</div>`:""}</div></details>`;}
+    <div class="mbody"><ol>${m.steps.map(s=>`<li>${glueEnd(s)}</li>`).join("")}</ol>${m.tip?`<div class="tip">&#9733; ${glueEnd(m.tip)}</div>`:""}</div></details>`;}
 
 /* ---------- per-tool mini-tutorials (same .manual style, collapsed by default) ---------- */
 const TOOL_MANUAL={
@@ -338,7 +348,7 @@ const TOOL_MANUAL={
 };
 function toolManual(id){const m=TOOL_MANUAL[id];if(!m)return "";
   return `<details class="manual ${manualCue()}"><summary><span class="mico">${ICO.book}</span><span class="mttl">How to use this tool</span><span class="tw">&#9656;</span></summary>
-    <div class="mbody"><ol>${m.steps.map(s=>`<li>${s}</li>`).join("")}</ol>${m.tip?`<div class="tip">&#9733; ${m.tip}</div>`:""}</div></details>`;}
+    <div class="mbody"><ol>${m.steps.map(s=>`<li>${glueEnd(s)}</li>`).join("")}</ol>${m.tip?`<div class="tip">&#9733; ${glueEnd(m.tip)}</div>`:""}</div></details>`;}
 
 /* ---------- license footer (reused on every panel) ---------- */
 const LICENSE=`<footer class="src">MERCS&trade; &copy; Fifth Angel Studios. Used under license. App by <a href="https://digirunestudios.com" target="_blank" rel="noopener" class="dr-link"><b>DigiRune Studios</b></a>.<br>All stats, cards &amp; rules transcribed verbatim from the MERCS 2.5 source.</footer>`;
@@ -1241,10 +1251,9 @@ function markFirst(root,q){
   const lc=String(q).toLowerCase();if(!lc)return null;
   const w=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);let n;
   while((n=w.nextNode())){
-    const v=n.nodeValue.toLowerCase(); let L=lc, i=v.indexOf(L);
-    if(i<0&&lc.indexOf("-")>=0){ L=lc.replace(/-/g,"-\u2060"); i=v.indexOf(L); }
+    const i=n.nodeValue.toLowerCase().indexOf(lc);
     if(i<0)continue;
-    try{ const r=document.createRange();r.setStart(n,i);r.setEnd(n,i+L.length);
+    try{ const r=document.createRange();r.setStart(n,i);r.setEnd(n,i+lc.length);
       const mk=document.createElement("mark");mk.className="rule-hit";r.surroundContents(mk);return mk; }catch(e){ return null; }
   }
   return null;
@@ -1325,11 +1334,18 @@ function buildSearchIndex(){
   idx.forEach(r=>{r.labelLc=r.label.toLowerCase();r.lc=(r.label+" "+r.text).toLowerCase();});
   SEARCH_INDEX=idx;
 }
-function hl(text,q){if(!q)return nobrHy(esc(text));const i=text.toLowerCase().indexOf(q.toLowerCase());if(i<0)return nobrHy(esc(text));
-  return nobrHy(esc(text.slice(0,i))+"<mark>"+esc(text.slice(i,i+q.length))+"</mark>"+esc(text.slice(i+q.length)));}
-/* keep a hyphenated word on one line ("Non-Combat" never splits as "Non- / Combat"): a zero-width WORD JOINER (U+2060)
-   after a hyphen that sits between word characters (a <mark> edge counts) removes the line-break chance. Display only. */
-function nobrHy(h){return String(h).replace(/([A-Za-z0-9]|<\/?mark>)-(?=[A-Za-z0-9]|<\/?mark>)/g,"$1-\u2060");}
+/* highlight the match and keep every hyphenated word on one line ("Non-Combat" never splits as "Non- / Combat").
+   Hyphenated words sit in <span class="nw"> (white-space:nowrap): layout only, the text itself is unchanged, so copy and paste
+   gives exactly the original. A nowrap span that overlaps the match grows to contain it so the tags nest cleanly. */
+function hl(text,q){text=String(text);
+  const ws=[];text.replace(/[A-Za-z0-9]+(?:-[A-Za-z0-9]+)+/g,(m,o)=>{ws.push([o,o+m.length]);return m;});
+  let mk=null;if(q){const i=text.toLowerCase().indexOf(q.toLowerCase());if(i>=0)mk=[i,i+q.length];}
+  let sp=ws;if(mk){const ov=ws.filter(w=>w[0]<mk[1]&&w[1]>mk[0]);if(ov.length){const u=[Math.min(mk[0],...ov.map(w=>w[0])),Math.max(mk[1],...ov.map(w=>w[1]))];sp=ws.filter(w=>ov.indexOf(w)<0).concat([u]);}}
+  const evs=[];sp.forEach(w=>{evs.push([w[0],2,'<span class="nw">'],[w[1],1,'</span>']);});if(mk){evs.push([mk[0],3,'<mark>'],[mk[1],0,'</mark>']);}
+  evs.sort((a,b)=>a[0]-b[0]||a[1]-b[1]);let out="",pos=0;
+  evs.forEach(e=>{out+=esc(text.slice(pos,e[0]))+e[2];pos=e[0];});return out+esc(text.slice(pos));}
+/* same no-split rule for already-escaped prose (rules, briefings): wrap hyphenated words in a nowrap span; text unchanged */
+function nwHy(h){return String(h).replace(/[A-Za-z0-9]+(?:-[A-Za-z0-9]+)+/g,'<span class="nw">$&</span>');}
 function openSearch(){
   const s=$("#search");s.classList.add("open");
   if(!s._pushed){history.pushState({search:true},"","#search");s._pushed=true;}
@@ -1645,7 +1661,7 @@ function openAbout(){
   popOpen(`<h4>About &amp; Privacy</h4>
     <p class="small" style="color:var(--ink2)">The official MERCS Companion by <a href="https://digirunestudios.com" target="_blank" rel="noopener" class="dr-link"><b>DigiRune Studios</b></a>. A complete field reference for the MERCS 2.5 tabletop game: every unit, contingency card, corporate trait, operation, rule, modifier and keyword, plus seven battlefield tools and your Favorites.</p>
     <h4 style="font-size:1rem;margin-top:.8rem">Privacy</h4>
-    <p class="small" style="color:var(--ink2)">The app works fully offline and shows <b>no ads</b>. Without signing in it collects <b>no personal data</b>; nothing leaves your device. Signing in with <b>Google</b> or <b>Apple</b> is optional; it creates a private account so your favorites, strike teams and trackers <b>sync across your devices</b>. We then store only your name, email and your in-app selections, using Google Firebase (Authentication + Firestore) as the processor. We never sell your data or use it for ads. You can delete your account and all synced data anytime from <b>Sign In &rarr; Delete account &amp; data</b>, or read the full policy and deletion steps at <a href="https://mercs.digirunestudios.com/privacy.html" target="_blank" rel="noopener" class="dr-link">mercs.digirunestudios.com/privacy</a>.</p>
+    <p class="small" style="color:var(--ink2)">The app works fully offline and shows <b>no ads</b>. Without signing in it collects <b>no personal data</b>: your favorites, strike teams and trackers are saved only on this device, and nothing leaves it. You can clear them anytime from <b>Sign In</b>. Signing in with <b>Google</b> or <b>Apple</b> is optional and adds sync: it creates a private account so your selections <b>sync across your devices</b>. We then store only your name, email and your in-app selections, using Google Firebase (Authentication + Firestore) as the processor. We never sell your data or use it for ads. You can delete your account and all synced data anytime from <b>Sign In &rarr; Delete account &amp; data</b>, or read the full policy and deletion steps at <a href="https://mercs.digirunestudios.com/privacy.html" target="_blank" rel="noopener" class="dr-link">mercs.digirunestudios.com/privacy</a>.</p>
     <h4 style="font-size:1rem;margin-top:.8rem">Credits &amp; License</h4>
     <p class="small" style="color:var(--ink2)">MERCS&trade; &copy; Fifth Angel Studios. Used under license. All stats, cards and rules are transcribed verbatim from the MERCS 2.5 source. Interface icons are hand-authored by DigiRune Studios; fonts (Oswald, Days One, Barlow) are served from Google Fonts under the SIL Open Font License.</p>
     <p class="small" style="color:var(--ink2);margin-top:.6rem">Version ${APP_VERSION}</p>
@@ -1868,13 +1884,28 @@ function openAccount(){
         <button class="gsi-btn" id="siGoogle">${GLOGO}<span>Sign in with Google</span></button>
         <button class="asi-btn" id="siApple">${ALOGO}<span>Sign in with Apple</span></button>
       </div>
-      <div class="row" style="margin-top:.35rem"><button class="btn ghost sm" id="siStop">Stop saving on this device</button></div>`);
+      <div class="row" style="margin-top:.35rem"><button class="btn ghost sm" id="siStop">Stop saving on this device</button></div>
+      <p class="small muted" style="margin-top:.4rem">Stopping deletes what is saved on this device. Synced account data is not affected.</p>`);
     $("#siGoogle").onclick=()=>{if(window.__mercsSync)window.__mercsSync.signInGoogle();};
     $("#siApple").onclick=()=>{if(window.__mercsSync)window.__mercsSync.signInApple();};
-    $("#siStop").onclick=()=>{signOut();popClose();};
+    armClear($("#siStop"),()=>{signOut();popClose();});
+  }else if(A&&A.auto){
+    /* automatic device save (first-time players): say so, offer sync, and offer a way to stop and clear */
+    popOpen(`<h4>Sign in to sync</h4>
+      <p class="small muted">Your favorites, strike teams and trackers are saved on this device only. Sign in (optional) to sync them across all your devices.</p>
+      <div class="signin-official">
+        <button class="gsi-btn" id="siGoogle">${GLOGO}<span>Sign in with Google</span></button>
+        <button class="asi-btn" id="siApple">${ALOGO}<span>Sign in with Apple</span></button>
+      </div>
+      <div class="row" style="margin-top:.2rem"><button class="btn ghost sm" id="siClear">Clear saved data on this device</button></div>
+      <p class="small muted" style="margin-top:.55rem">Clearing deletes what is saved on this device and stops saving it. Signing in creates a private account that stores only your in-app selections. No tracking, no ads. You can delete it anytime. <a href="#" id="siPriv" class="dr-link">Privacy</a>.</p>`);
+    $("#siGoogle").onclick=()=>{if(window.__mercsSync)window.__mercsSync.signInGoogle();};
+    $("#siApple").onclick=()=>{if(window.__mercsSync)window.__mercsSync.signInApple();};
+    armClear($("#siClear"),()=>{clearSavedData();popClose();});
+    const _p=$("#siPriv"); if(_p)_p.onclick=(e)=>{e.preventDefault();popClose();openAbout();};
   }else{
     popOpen(`<h4>Sign in to sync</h4>
-      <p class="small muted">Keep your favorites, strike teams and trackers and sync them across all your devices. Optional: you can also just save on this device.</p>
+      <p class="small muted">This device is not saving your selections. Sign in to keep your favorites, strike teams and trackers and sync them across all your devices, or just save them on this device.</p>
       <div class="signin-official">
         <button class="gsi-btn" id="siGoogle">${GLOGO}<span>Sign in with Google</span></button>
         <button class="asi-btn" id="siApple">${ALOGO}<span>Sign in with Apple</span></button>

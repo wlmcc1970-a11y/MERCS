@@ -291,3 +291,4 @@ body:has(#syncTip) .toast{bottom:calc(var(--pk-dock,0px) + 1rem + var(--safe-b) 
 @media(max-width:480px){.rnav{grid-template-columns:1fr}.rnav-sp{display:none}}
 /* search deep links land below the sticky header (same offset the keyword fix uses) */
 .controw,.opcard,.corphead,.modcard{scroll-margin-top:calc(76px + var(--safe-t,0px))}
+.nw{white-space:nowrap}
