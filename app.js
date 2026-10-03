@@ -978,7 +978,7 @@ function toolDraw(v){
   function deal(){const f=facNow();const deck=deckForDraw(f).map((c,i)=>({...c,id:i}));shuffle(deck);const n=Math.min(+$("#ctHand",v).value||4,deck.length);
     state={fac:f,drawn:deck.slice(0,n),rest:deck.slice(n),live:null};persist();draw();}
   function draw(){if(!state||state.fac!==facNow()){$("#ctHandWrap",v).innerHTML=`<div class="empty">Choose a MegaCon and deal a hand.</div>`;$("#ctInfo",v).textContent="No hand dealt yet";return;}
-    $("#ctInfo",v).innerHTML=`<span class="seg">Deck: <b translate="no">${esc(state.fac)}</b></span><span class="seg">${deckForDraw(state.fac).length} cards</span><span class="seg">holding <b>${state.drawn.length}</b></span><span class="seg">${state.rest.length} left</span>`;
+    $("#ctInfo",v).innerHTML=`<span class="lbseg">Deck: <b translate="no">${esc(state.fac)}</b></span><span class="lbseg">${deckForDraw(state.fac).length} cards</span><span class="lbseg">holding <b>${state.drawn.length}</b></span><span class="lbseg">${state.rest.length} left</span>`;
     $("#ctHandWrap",v).innerHTML=state.drawn.map(c=>`<div class="handcard ${state.live===c.id?'live':''}">
         <div class="row" style="justify-content:space-between"><span class="ct" translate="no">${esc(c.title)} ${c.core?'':'<span class="chip dep">Faction</span>'}</span><span class="cop">${esc(c.op)}</span></div>
         <div class="cx">${esc(c.text)}</div><div class="row2"><button class="stog ${state.live===c.id?'on':''}" data-live="${c.id}">${state.live===c.id?'★ Live card':'Set as Live'}</button>
