@@ -726,15 +726,15 @@ header.bar{border-bottom:3px solid var(--cyan)}
 <!-- Search overlay -->
 <div class="search" id="search"><div class="searchsheet">
   <div class="searchhead">
-    <input id="searchInput" type="search" placeholder="Search units, cards, rules…" autocomplete="off">
-    <button class="iconbtn" id="searchClose" aria-label="Close">✕</button>
+    <input id="searchInput" type="search" placeholder="Search units, cards, rules…" autocomplete="off" spellcheck="false" autocorrect="off" autocapitalize="off" enterkeyhint="search">
+    <button class="searchcancel" id="searchClose" aria-label="Cancel search">Cancel</button>
   </div>
   <div class="searchcont" id="searchResults"></div>
 </div></div>
 
 <div class="pop" id="pop"><div class="popcard" id="popcard"></div></div>
 <div class="toast" id="toast"></div>
-<div class="offbar" id="offbar" role="status" aria-live="polite"><span class="spin"></span><span class="offmsg">Saving cards for offline…</span></div>
+<div class="offbar" id="offbar" role="status" aria-live="polite"><span class="spin"></span><span class="offmsg">Saving cards for offline use</span><i class="offfill" aria-hidden="true"></i></div>
 <div class="spinner" id="spinner"><i></i></div>
 
 <script src="data.js"></script>

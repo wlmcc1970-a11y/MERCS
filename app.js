@@ -59,7 +59,7 @@ function ruleProse(seg){
   let html="";
   for(let i=0;i<chunks.length;i++){
     if(i%2===1){ html+="<h4 class=\"rsub\">"+esc(chunks[i].trim())+"</h4>"; }
-    else { const txt=chunks[i].trim(); if(txt) html+=paragraphize(txt).map(pp=>"<p class=\"bodytext\">"+esc(pp)+"</p>").join(""); }
+    else { const txt=chunks[i].trim(); if(txt) html+=paragraphize(txt).map(pp=>"<p class=\"bodytext\">"+nobrHy(esc(pp))+"</p>").join(""); }
   }
   return html;
 }
@@ -71,7 +71,7 @@ function escProse(s){
   return norm.split(/\n[ \t]*\n+/).map(par=>{
     const flowed=par.replace(/[ \t]*\n[ \t]*/g," ").trim();
     if(!flowed) return "";
-    return paragraphize(flowed).map(pp=>"<p class=\"bodytext\">"+esc(pp)+"</p>").join("");
+    return paragraphize(flowed).map(pp=>"<p class=\"bodytext\">"+nobrHy(esc(pp))+"</p>").join("");
   }).filter(Boolean).join("");
 }
 /* flowInline — same reflow as escProse but inline (paragraph breaks become <br><br>),
@@ -236,11 +236,12 @@ let _manualCued=false;
 function manualCue(){ if(_manualCued)return ""; _manualCued=true; return "cue"; }
 /* ---------- per-tab Field Manual ---------- */
 const MANUAL={
- home:{steps:["This is your <b>operations dashboard</b>. Move between sections using the <b>tab bar</b> below (on tablet &amp; desktop) or the <b>menu button (&#9776;)</b> at the top-right (on phones).",
-   "Tap a <b>quick-entry card</b> to jump straight into a section.",
-   "Open the seven battlefield <b translate='no'>Tools</b> (plus your Favorites) from the Tools button (in the header on tablet &amp; desktop, or inside the <b>&#9776; menu</b> on phones). They overlay any section.",
-   "<b translate='no'>Search</b> is always in the header (top-right): find any unit, card, mission, rule, or keyword instantly."],
-   tip:"Sign in (optional) from the header on tablet &amp; desktop, or from the <b>&#9776; menu</b> on phones, to keep teams, trackers and favorites across sessions."},
+ /* .vn = phones only, .vw = tablet and desktop only (switch at 700px, the same point the menu replaces the tab bar) */
+ home:{steps:["This is your <b>operations dashboard</b>. <span class='vn'>Move between sections with the <b>menu button (&#9776;)</b> at the top right.</span><span class='vw'>Move between sections with the <b>tab bar</b> at the bottom.</span>",
+   "Tap a <b>section card</b> to jump straight into that section.",
+   "<span class='vn'>Open the seven battlefield <b translate='no'>Tools</b> (plus your Favorites) from the <b>Field Tools</b> cards below, or from the <b>&#9776; menu</b>.</span><span class='vw'>Open the seven battlefield <b translate='no'>Tools</b> (plus your Favorites) from the <b>Field Tools</b> cards below, or from the Tools button in the header.</span> They open over any section.",
+   "<b translate='no'>Search</b> is always in the header at the top right: find any unit, card, mission, rule or keyword instantly."],
+   tip:"<span class='vn'>Sign in from the <b>&#9776; menu</b></span><span class='vw'>Sign in from the header</span> (optional) to sync your teams, trackers and favorites across your devices."},
  megacons:{steps:["Pick a <b>MegaCon</b> (faction) to see its roster in card order.",
    "Tap a unit to open its full Reference Card: the real card front and back, plus a structured breakdown.",
    "The eight <b>stats</b> are color-coded across the whole game; tap any tile for its meaning.",
@@ -276,7 +277,7 @@ const MANUAL={
    tip:"37 Keywords and 60 Personal Abilities, transcribed verbatim."}
 };
 function manual(id){const m=MANUAL[id];if(!m)return "";
-  return `<details class="manual ${manualCue()}"><summary><span class="mico">${ICO.book}</span>Field Manual: How to use this PAGE<span class="tw">&#9656;</span></summary>
+  return `<details class="manual ${manualCue()}"><summary><span class="mico">${ICO.book}</span><span class="mttl">How to use this page</span><span class="tw">&#9656;</span></summary>
     <div class="mbody"><ol>${m.steps.map(s=>`<li>${s}</li>`).join("")}</ol>${m.tip?`<div class="tip">&#9733; ${m.tip}</div>`:""}</div></details>`;}
 
 /* ---------- per-tool mini-tutorials (same .manual style, collapsed by default) ---------- */
@@ -284,20 +285,20 @@ const TOOL_MANUAL={
  codex:{steps:[
    "Pick a <b>MegaCon</b> from the dropdown to list all of its units.",
    "Type in the <b>Search name</b> box to filter that faction's roster.",
-   "Tap any unit to open its stat card. Each value is <b>heat-coloured</b> against the whole game (it knows low CR/IT/AF are good).",
-   "Tap a coloured stat to pop its meaning; open the <b>MegaCons</b> tab for the full card."],
+   "Tap any unit to open its stat card. Each value is <b>colored</b> against the whole game (low CR, IT and AF count as good).",
+   "Tap a colored stat to see its meaning; open <b>MegaCons</b> for the full card."],
    tip:"A fast way to compare a unit's strengths and weaknesses at a glance."},
  round:{steps:[
    "Choose a MegaCon and unit, then <b>+ Add</b> each model. Add both sides to track the whole table.",
-   "Tap <b>Roll initiative</b> to roll a d10 for every model; use <b>-/+</b> to apply the model's IM modifier (clamped to its IM).",
+   "Tap <b>Roll initiative</b> to roll a d10 for every model; use the <b>IM mod &minus;/+</b> buttons to apply the model's IM modifier (clamped to its IM).",
    "Activate top-down: the highest total leads (<b>Quick</b> breaks ties on the same step).",
    "Tap <b>Activate</b> as each model acts, then <b>Next round</b> to reset rolls for the new round.",
-   "<b>Clear page</b> empties the tracker and returns to Round 1."],
+   "<b>Clear page</b> (tap twice) empties the tracker and returns to Round 1."],
    tip:"Initiative, IM modifiers and Quick tie-breaks are handled for you."},
  opsetup:{steps:[
    "Pick a mission to load its <b>Contingency hand size</b> and <b>Live Contingency Round</b>.",
    "Read the briefing, then tap an objective to tick it <b>Secured</b>; the OP tally updates live.",
-   "Use <b>Clear ticks</b> to reset objectives for a new game.",
+   "Use <b>Clear ticks</b> (tap twice) to reset objectives for a new game.",
    "Tap <b>Deal this hand in Contingency Draw</b> to carry the hand size straight into that tool."],
    tip:"Your ticks for each operation are saved separately on this device."},
  draw:{steps:[
@@ -305,38 +306,38 @@ const TOOL_MANUAL={
    "Set the <b>Hand</b> size (or it arrives pre-filled from Operation Setup), then <b>Shuffle &amp; deal</b>.",
    "Tap <b>Set as Live</b> on one card to mark your Live Contingency Card (it can't be discarded).",
    "<b>Discard</b> returns a card to the deck; <b>+ Draw one</b> takes the next card.",
-   "<b>Clear page</b> resets the hand and any carried-over operation settings."],
+   "<b>Clear page</b> (tap twice) resets the hand and any carried-over operation settings."],
    tip:"The Live Contingency Card is protected from discarding, by the rules."},
  damage:{steps:[
    "Add each MERCS by MegaCon and unit; its Blood (BL) and Armor (AF) are loaded automatically.",
-   "Use <b>-/+</b> to track <b>Blood</b> pips; a model is KILLED when Blood reaches its BL.",
+   "Use the <b>Blood &minus;/+</b> buttons to track Blood pips; a model is KILLED when Blood reaches its BL.",
    "Tap <b>Roll armor check</b> to roll a d10: equal or higher than AF holds, lower fails (<b>AF 0 always fails</b>).",
    "Toggle status chips (Pinned, Burning, Armor Broken…) to flag conditions.",
-   "<b>Clear page</b> wipes the squad to start fresh."],
+   "<b>Clear page</b> (tap twice) wipes the squad to start fresh."],
    tip:"Armor Failure is resolved exactly by the book, including the AF 0 auto-fail."},
  strike:{steps:[
-   "Pick one <b>MegaCon</b> and a <b>team size</b> (3-5 members).",
+   "Pick one <b>MegaCon</b> and a <b>team size</b> (3 to 5 members).",
    "Add units from that faction. Duplicate <b>archetypes</b> are disabled, since they aren't legal.",
    "Watch the status line: it confirms a <b>Legal Strike Team</b> or flags what's wrong.",
-   "Tap the remove button to drop a member, or <b>Clear team</b> to start over.",
+   "Tap a member's <b>&#10005;</b> to remove it, or <b>Clear team</b> (tap twice) to start over.",
    "Changing MegaCon resets the roster. (MERCS has no point system.)"],
    tip:"Legality (one MegaCon, no repeated archetype) is enforced as you build."},
  favorites:{steps:[
    "Star (&#9733;) any unit, contingency card or operation elsewhere in the app to collect it here.",
    "Items are grouped by type: Units, Contingency Cards and Operations.",
    "Tap a unit or operation to jump straight to its full record.",
-   "Tap the remove button on any entry to take it off your favorites."],
-   tip:"Favorites are saved on this device and survive between sessions when signed in."},
+   "Tap <b>&#10005;</b> on any entry to take it off your favorites."],
+   tip:"Favorites are saved on this device. Sign in to sync them across your devices."},
  compare:{steps:[
    "Pick a <b>MegaCon</b> and a unit, then tap <b>+ Add</b>. You can stack up to <b>three</b>, even across factions.",
    "The table puts the eight stats (IM, RE, CR, MP, BL, AV, AF, IT) down the side and your units across the top.",
-   "Values are <b>heat-coloured</b> the same way as the Codex, and the best value in each row is <b>starred</b>.",
+   "Values are <b>colored</b> the same way as the Codex. A <b>star</b> marks the one unit that leads a row; tied rows get no star.",
    "Below the stats you'll see each unit's <b>archetype</b> and full <b>weapon</b> list (B/S/M/L).",
-   "Tap a unit's <b>\u00d7</b> to drop it, or <b>Clear all</b> to start over."],
-   tip:"Best-per-stat already accounts for the stats where lower is better (CR, IT, AF)."}
+   "Tap a unit's <b>&#10005;</b> to remove it, or <b>Clear all</b> (tap twice) to start over."],
+   tip:"The star already accounts for the stats where lower is better (CR, IT, AF)."}
 };
 function toolManual(id){const m=TOOL_MANUAL[id];if(!m)return "";
-  return `<details class="manual ${manualCue()}"><summary><span class="mico">${ICO.book}</span>How to use this TOOL<span class="tw">&#9656;</span></summary>
+  return `<details class="manual ${manualCue()}"><summary><span class="mico">${ICO.book}</span><span class="mttl">How to use this tool</span><span class="tw">&#9656;</span></summary>
     <div class="mbody"><ol>${m.steps.map(s=>`<li>${s}</li>`).join("")}</ol>${m.tip?`<div class="tip">&#9733; ${m.tip}</div>`:""}</div></details>`;}
 
 /* ---------- license footer (reused on every panel) ---------- */
@@ -376,7 +377,7 @@ const TABS=[
  {id:"home",t:"Home",ico:ICO.home},
  {id:"megacons",t:"MegaCons",ico:ICO.mega},
  {id:"contingency",t:"Contingency",ico:ICO.cont},
- {id:"corp",t:"Corporate",ico:ICO.corp},
+ {id:"corp",t:"Corporate Traits",ico:ICO.corp},
  {id:"operations",t:"Operations",ico:ICO.ops},
  {id:"rules",t:"Rules",ico:ICO.rules},
  {id:"modifiers",t:"Modifiers",ico:ICO.mods},
@@ -502,7 +503,7 @@ builders.megacons=function(p){
   p.innerHTML=`<h2 class="vh">MegaCons</h2><p class="vsub">12 factions, 123 units. Tap a unit for its full Reference Card.</p>
    ${manual("megacons")}
    <div class="row"><label class="small muted" translate="no">MegaCon</label><select id="megFac" translate="no">${factionOptions(fac)}</select>
-     <input id="megSearch" type="search" placeholder="Search this faction…" style="flex:1;min-width:120px"></div>
+     <input id="megSearch" type="search" placeholder="Search units…" style="flex:1;min-width:120px"></div>
    <div id="megList" class="list"></div>
    <div id="megDetail"></div>${LICENSE}`;
   const draw=()=>{const f=$("#megFac",p).value;Store.set("megFac",f);const q=$("#megSearch",p).value.trim().toLowerCase();
@@ -526,7 +527,7 @@ function showUnit(i){const u=DATA.units[i];
   const d=$("#megDetail");
   d.innerHTML=`<button class="rback" onclick="megBack()" style="margin:.1rem 0 .7rem">&#8249; Back</button><div class="unitcard" id="rec-unit-${esc(u.id)}"><div class="uhead"><span class="fac" translate="no">${esc(u.faction)}</span>
       <span class="chip" translate="no">${esc(u.archetype)}</span>
-      ${u.hasQuick?'<span class="chip q">Quick</span>':''}${u.deployable?'<span class="chip dep">Deployable</span>':''}
+      ${u.hasQuick?chipRule("q","Quick",i):''}${u.deployable?chipRule("dep","Deployable",i):''}
       <span class="grow"></span>${starBtn("units",u.id,cap(u.name))}<button class="ucls" aria-label="Close card" title="Close" onclick="megBack()">&#10005;</button></div>
     <div class="cardimgs">
       <figure class="cardfig"><img loading="eager" src="${esc(u.imgFront)}" alt="${esc(cap(u.name))} card front"><figcaption>Front</figcaption></figure>
@@ -551,7 +552,11 @@ function showUnit(i){const u=DATA.units[i];
 window.showUnit=showUnit;
 function megBack(){const d=$("#megDetail");if(d)d.innerHTML="";const ml=$("#megList");if(ml)ml.style.display="";scrollTop0();}
 window.megBack=megBack;
-function megHeadClose(ev){if(ev.target.closest&&(ev.target.closest(".star")||ev.target.closest(".kw")||ev.target.closest(".stat")||ev.target.closest(".ucls")))return;megBack();}
+/* a header chip that names a rule (Quick, Deployable) opens that rule; other chips are labels and do nothing */
+function chipRule(cls,name,i){return kwEntry(name,i)
+  ?`<button class="chip ${cls} chipbtn" onclick="termPop('${name}',${i})" aria-label="${name} rule">${name}</button>`
+  :`<span class="chip ${cls}">${name}</span>`;}
+function megHeadClose(ev){if(ev.target.closest&&(ev.target.closest(".star")||ev.target.closest(".kw")||ev.target.closest(".stat")||ev.target.closest(".ucls")||ev.target.closest(".chip")||ev.target.closest(".fac")))return;megBack();}
 window.megHeadClose=megHeadClose;
 
 /* image lightbox */
@@ -567,7 +572,7 @@ builders.contingency=function(p){
    ${manual("contingency")}
    <div class="row"><label class="small muted" translate="no">MegaCon</label><select id="contFac" translate="no">${factionOptions(fac)}</select>
      <input id="contSearch" type="search" placeholder="Search cards…" style="flex:1;min-width:120px">
-     <button class="btn ghost sm" id="contToDraw">Deal a hand &#8250;</button></div>
+     <button class="btn ghost sm" id="contToDraw">Deal a hand&nbsp;&#8250;</button></div>
    <div id="contList" class="list"></div>${LICENSE}`;
   const reveal=(c,row)=>{const open=row.classList.contains("open");
     // close any other open reveal
@@ -680,7 +685,7 @@ builders.operations=function(p){
         <h4 class="usec">Course of Action</h4>${escProse(o.courseOfAction)}
         <h4 class="usec">Environmental Analysis</h4><div class="mdblock">${mdBlock(o.environmentalAnalysis)}</div>
         <h4 class="usec">Secured Objectives</h4><div class="list objlist">${objs}</div>
-        <div class="row" style="margin-top:.8rem"><button class="btn ghost sm" id="opToSetup">Open in Operation Setup &#8250;</button></div>
+        <div class="row" style="margin-top:.8rem"><button class="btn ghost sm" id="opToSetup">Open in Operation Setup&nbsp;&#8250;</button></div>
       </div>`;
     wireStars($("#opTabBody",p));
     $("#opToSetup",p).onclick=()=>{Store.set("opSetupIdx",+$("#opTabSel",p).value);openTool("opsetup");};};
@@ -718,8 +723,12 @@ function ruleFigs(s){
 /* full body of a core section (heading is rendered by the single-section view) */
 function coreSectionBody(s){
   const tbls=(s.tables&&s.tables.length)?s.tables.map(tableHTML).join(""):"";
-  return `${renderRuleBody(s.body)}${ruleFigs(s)}${tbls}`;
+  return `${renderRuleBody(stripPageNo(s.body))}${ruleFigs(s)}${tbls}`;
 }
+/* display-only: drop the printed page number the PDF transcription left as the last line of some core sections
+   (e.g. "...cannot Blitz during this Movement.\n23"). Only a bare 1-2 digit last line that follows a finished
+   sentence is removed; data.js is untouched and nothing else changes. */
+function stripPageNo(b){return String(b==null?"":b).replace(/([.!?)"\u201d])[ \t]*\n[ \t]*\d{1,2}[ \t]*$/,"$1");}
 /* the readable core sections for the contents index (exclude Cover + the raw Table of Contents) */
 function coreRuleEntries(){
   return DATA.rules.core.sections
@@ -771,8 +780,8 @@ builders.rules=function(p){
       <h3 class="rsh rsh-big" translate="no">${esc(e.title)}</h3>
       ${e.html}
       <nav class="rnav">
-        <button class="btn ghost sm rnav-p" id="rPrev" ${prev?"":"disabled"}>${prev?'&#8249; '+esc(prev.title):'&#8249; Prev'}</button>
-        <button class="btn ghost sm rnav-n" id="rNext" ${next?"":"disabled"}>${next?esc(next.title)+' &#8250;':'Next &#8250;'}</button>
+        ${prev?`<button class="rnav-b rnav-p" id="rPrev"><span class="rnav-k">&#8249; Previous section</span><span class="rnav-t" translate="no">${esc(prev.title)}</span></button>`:'<span class="rnav-sp"></span>'}
+        ${next?`<button class="rnav-b rnav-n" id="rNext"><span class="rnav-k">Next section &#8250;</span><span class="rnav-t" translate="no">${esc(next.title)}</span></button>`:'<span class="rnav-sp"></span>'}
       </nav></div>`;
     $("#rBack",p).onclick=showContents;
     const pb=$("#rPrev",p);if(pb&&prev)pb.onclick=()=>showSection(i-1);
@@ -864,7 +873,7 @@ window.closeTools=closeTools;
 /* ---------- TOOL 1: CODEX ---------- */
 function toolCodex(v){
   const fac=Store.get("codexFac",FACTIONS_AZ[0]);
-  v.innerHTML=`${toolManual("codex")}<p class="vsub">Colors rank each stat across the whole game (it knows low CR/IT/AF are good).</p>
+  v.innerHTML=`${toolManual("codex")}<p class="vsub">Tap a unit to see its eight stats, each colored against the whole game. Low CR, IT and AF count as good.</p>
    <div class="row"><label class="small muted" translate="no">MegaCon</label><select id="cxFac" translate="no">${factionOptions(fac)}</select>
      <input id="cxSearch" type="search" placeholder="Search name…" style="flex:1;min-width:120px"></div>
    <div id="cxList" class="list"></div><div id="cxDetail"></div>`;
@@ -882,7 +891,7 @@ function codexDetail(v,i){const u=DATA.units[i];
       <div class="bar"><i style="width:${w}%;background:${col}"></i></div></button>`;}).join("");
   $("#cxDetail",v).innerHTML=`<div class="unitcard"><div class="uhead"><h3 translate="no">${esc(cap(u.name))}</h3><span class="fac" translate="no">${esc(u.faction)}</span></div>
     <div class="stats">${stats}</div><div class="small muted">Tap a stat for its meaning.</div>
-    <button class="btn sm" id="cxOpen" style="margin-top:.7rem">View full MegaCon card &#8250;</button></div>`;
+    <button class="btn sm" id="cxOpen" style="margin-top:.7rem">View full MegaCon card&nbsp;&#8250;</button></div>`;
   const ob=$("#cxOpen",v);if(ob)ob.onclick=()=>{closeTools();deepGoUnit(u.faction,i,u.id);};
   $("#cxDetail",v).scrollIntoView({behavior:"smooth",block:"start"});
 }
@@ -890,11 +899,11 @@ function codexDetail(v,i){const u=DATA.units[i];
 /* ---------- TOOL 2: ROUND TRACKER ---------- */
 function toolRound(v){
   let roster=Store.get("roundRoster",[]);let round=Store.get("roundNo",1);
-  v.innerHTML=`${toolManual("round")}<p class="vsub">Add your MERCS, roll initiative, activate top-down. Quick breaks ties.</p>
+  v.innerHTML=`${toolManual("round")}<p class="vsub">Add your MERCS, roll initiative, then activate from the top of the list. Quick breaks ties.</p>
    <div class="rule"><span><b>Quick:</b> a MERCS with Quick acts first among models tied on the same Initiative Step.</span></div>
    <div class="row"><select id="rdFac" translate="no">${factionOptions(FACTIONS_AZ[0])}</select><select id="rdUnit" translate="no"></select><button class="btn sm" id="rdAdd">+ Add</button></div>
-   <div class="row" style="margin-top:.7rem"><span class="chip">Round <b id="rdRound" style="margin-left:.3rem">${round}</b></span>
-     <button class="btn ghost sm" id="rdRoll">&#8635; Roll initiative</button><button class="btn ghost sm" id="rdNext">Next round &#8250;</button><button class="btn ghost sm" id="rdClear">Clear page</button></div>
+   <div class="row actrow"><button class="btn ghost sm" id="rdRoll">&#8635; Roll initiative</button><button class="btn ghost sm" id="rdNext">Next round&nbsp;&#8250;</button></div>
+   <div class="listbar"><span class="chip">Round <b id="rdRound" style="margin-left:.3rem">${round}</b></span><button class="btn clr" id="rdClear">Clear page</button></div>
    <div id="rdList" class="list"></div>`;
   const facUnits=()=>extByFaction($("#rdFac",v).value).filter(u=>!u.deployable);
   const fillUnits=()=>{$("#rdUnit",v).innerHTML=facUnits().map(u=>`<option value="${unitIndex(u)}">${esc(cap(u.name))} (IM ${esc(u.stats.IM)})</option>`).join("");};
@@ -909,9 +918,9 @@ function toolRound(v){
         <div class="initbadge ${pos===0&&rolled?'lead':''}">${rolled?o.fin:'–'}</div>
         <div class="grow"><div class="nm" translate="no">${esc(cap(o.u.name))} ${o.quick?'<span class="chip q">Quick</span>':''}</div>
           <div class="meta" translate="no">${esc(o.u.faction)} · IM ${esc(o.u.stats.IM)}${rolled?` · rolled ${r.roll}${r.mod?` ${r.mod>0?'+':''}${r.mod}`:''}`:''}</div></div>
-        ${rolled?`<div class="row"><button class="stog" data-m="-1" data-id="${o.idx}">−</button><button class="stog" data-m="1" data-id="${o.idx}">+</button>
-           <button class="btn ghost sm" data-done="${o.idx}">${r.done?'Undo':'Activate'}</button></div>`:''}
-        <button class="stog" data-del="${o.idx}">✕</button></div>`;}).join("");
+        <button class="xbtn" data-del="${o.idx}" aria-label="Remove ${esc(cap(o.u.name))}" title="Remove">✕</button>
+        ${rolled?`<div class="trkctl"><span class="stepper" role="group" aria-label="IM modifier"><span class="steplbl">IM mod</span><button class="stepb" data-m="-1" data-id="${o.idx}" aria-label="Lower IM modifier">−</button><span class="stepv">${(r.mod??0)>0?'+':(r.mod??0)<0?'−':''}${Math.abs(r.mod??0)}</span><button class="stepb" data-m="1" data-id="${o.idx}" aria-label="Raise IM modifier">+</button></span>
+           <button class="btn ghost sm" data-done="${o.idx}">${r.done?'Undo':'Activate'}</button></div>`:''}</div>`;}).join("");
     $$("#rdList [data-done]",v).forEach(b=>b.onclick=()=>{roster[+b.dataset.done].done=!roster[+b.dataset.done].done;draw();});
     $$("#rdList [data-del]",v).forEach(b=>b.onclick=()=>{roster.splice(+b.dataset.del,1);draw();});
     $$("#rdList [data-m]",v).forEach(b=>b.onclick=()=>{const r=roster[+b.dataset.id];const u=DATA.units[r.i];r.mod=clampMod(u.stats.IM,(r.mod??0)+ +b.dataset.m);draw();});
@@ -930,7 +939,7 @@ function opLiveRound(o){const m=(o.missionParameters&&o.missionParameters.contin
 function toolOpSetup(v){
   const idx=Store.get("opSetupIdx",0);
   v.innerHTML=`${toolManual("opsetup")}<p class="vsub">Pick a mission to lay out its parameters and score objectives live.</p>
-   <div class="row"><select id="opSel">${DATA.operations.map((o,i)=>`<option value="${i}" ${i===idx?'selected':''} translate="no">${esc(o.title)}</option>`).join("")}</select><button class="btn ghost sm" id="opClear">Clear ticks</button></div><div id="opBody"></div>`;
+   <div class="row"><select id="opSel">${DATA.operations.map((o,i)=>`<option value="${i}" ${i===idx?'selected':''} translate="no">${esc(o.title)}</option>`).join("")}</select></div><div id="opBody"></div>`;
   const draw=()=>{const o=DATA.operations[+$("#opSel",v).value];Store.set("opSetupIdx",+$("#opSel",v).value);
     const hand=opHandSize(o),live=opLiveRound(o);
     const key="opChecked_"+o.id;let checked=Store.get(key,{});
@@ -939,17 +948,17 @@ function toolOpSetup(v){
         <span class="chip">Contingency: <b style="margin-left:.25rem">${hand} cards</b></span>
         <span class="chip">Live Round: <b style="margin-left:.25rem">${live??'?'}</b></span></div>
       <div class="unitcard"><h3 style="font-size:1.05rem">Briefing</h3><p class="small" style="color:var(--ink2)">${flowInline(o.briefing)}</p>
-        <div class="row" style="margin-top:.7rem"><button class="btn ghost sm" id="opToDraw">Deal this hand in Contingency Draw &#8594;</button></div></div>
-      <h3 style="font-size:1.05rem;margin:1rem 0 .3rem">Secured Objectives</h3><div class="list">${objs}</div>
+        <div class="row" style="margin-top:.7rem"><button class="btn ghost sm" id="opToDraw">Deal this hand in Contingency Draw&nbsp;&#8594;</button></div></div>
+      <div class="listbar"><h3 style="font-size:1.05rem;margin:0">Secured Objectives</h3><button class="btn clr" id="opClear">Clear ticks</button></div><div class="list">${objs}</div>
       <div class="tally"><span>Secured</span><span class="muted small" id="opCount"></span><span class="big" id="opSum">0 OP</span></div>`;
     const recalc=()=>{let sum=0,n=0;o.securedObjectives.forEach((s,i)=>{if(checked[i]){n++;const mm=String(s.op).match(/(\d+)\s*OP/);if(mm)sum+=+mm[1];}});
       $("#opSum",v).textContent=sum+" OP";$("#opCount",v).textContent=n+" / "+o.securedObjectives.length;};
     $$("#opBody .obj",v).forEach(b=>b.onclick=()=>{const i=+b.dataset.i;checked[i]=!checked[i];Store.set(key,checked);
       b.classList.toggle("checked");b.querySelector(".box").textContent=checked[i]?'✓':'';recalc();});
     $("#opToDraw",v).onclick=()=>{Store.set("drawHand",hand);Store.set("drawLive",live);Store.set("drawOpName",o.title);openTool("draw");};
+    armClear($("#opClear",v),()=>{Store.set(key,{});draw();toast("Objectives reset");});
     recalc();};
   $("#opSel",v).onchange=draw;
-  $("#opClear",v).onclick=()=>{const o=DATA.operations[+$("#opSel",v).value];Store.set("opChecked_"+o.id,{});draw();toast("Objectives reset");};
   draw();
 }
 
@@ -960,16 +969,16 @@ function toolDraw(v){
   const fac=Store.get("drawFac",FACTIONS_AZ[0]);const hand=Store.get("drawHand",4);
   v.innerHTML=`${toolManual("draw")}<p class="vsub">Deck = 19 shared + 1 faction-unique. Deal, set your Live card, discard to the limit.</p>
    ${Store.get("drawOpName")?`<div class="rule"><span>Hand size from <b>${esc(Store.get("drawOpName"))}</b>: deal <b>${hand}</b>. Live Contingency Round is <b>${Store.get("drawLive")??'?'}</b>.</span></div>`:''}
-   <div class="row"><select id="ctFac" translate="no">${factionOptions(fac)}</select><label class="small muted">Hand</label>
-     <input id="ctHand" type="number" min="1" max="20" value="${hand}" style="width:74px"><button class="btn sm" id="ctDeal">Shuffle &amp; deal</button>
-     <button class="btn ghost sm" id="ctDraw">+ Draw one</button><button class="btn ghost sm" id="ctClear">Clear page</button></div>
-   <div class="tagline"><span id="ctInfo"></span></div><div id="ctHandWrap" class="list"></div>`;
+   <div class="row"><select id="ctFac" translate="no">${factionOptions(fac)}</select><label class="small muted" for="ctHand">Hand</label>
+     <input id="ctHand" type="number" min="1" max="20" value="${hand}" style="width:74px"></div>
+   <div class="row actrow"><button class="btn sm" id="ctDeal">Shuffle &amp; deal</button><button class="btn ghost sm" id="ctDraw">+ Draw one</button></div>
+   <div class="listbar"><span id="ctInfo" class="lbtxt"></span><button class="btn clr" id="ctClear">Clear page</button></div><div id="ctHandWrap" class="list"></div>`;
   let state=Store.get("drawState",null);const facNow=()=>$("#ctFac",v).value;
   const persist=()=>{Store.set("drawState",state);Store.set("drawFac",facNow());Store.set("drawHand",+$("#ctHand",v).value||4);};
   function deal(){const f=facNow();const deck=deckForDraw(f).map((c,i)=>({...c,id:i}));shuffle(deck);const n=Math.min(+$("#ctHand",v).value||4,deck.length);
     state={fac:f,drawn:deck.slice(0,n),rest:deck.slice(n),live:null};persist();draw();}
-  function draw(){if(!state||state.fac!==facNow()){$("#ctHandWrap",v).innerHTML=`<div class="empty">Choose a MegaCon and deal a hand.</div>`;$("#ctInfo",v).textContent="";return;}
-    $("#ctInfo",v).innerHTML=`Deck: <b translate="no">${esc(state.fac)}</b> · ${deckForDraw(state.fac).length} cards · holding <b>${state.drawn.length}</b> · ${state.rest.length} left`;
+  function draw(){if(!state||state.fac!==facNow()){$("#ctHandWrap",v).innerHTML=`<div class="empty">Choose a MegaCon and deal a hand.</div>`;$("#ctInfo",v).textContent="No hand dealt yet";return;}
+    $("#ctInfo",v).innerHTML=`<span class="seg">Deck: <b translate="no">${esc(state.fac)}</b></span><span class="seg">${deckForDraw(state.fac).length} cards</span><span class="seg">holding <b>${state.drawn.length}</b></span><span class="seg">${state.rest.length} left</span>`;
     $("#ctHandWrap",v).innerHTML=state.drawn.map(c=>`<div class="handcard ${state.live===c.id?'live':''}">
         <div class="row" style="justify-content:space-between"><span class="ct" translate="no">${esc(c.title)} ${c.core?'':'<span class="chip dep">Faction</span>'}</span><span class="cop">${esc(c.op)}</span></div>
         <div class="cx">${esc(c.text)}</div><div class="row2"><button class="stog ${state.live===c.id?'on':''}" data-live="${c.id}">${state.live===c.id?'★ Live card':'Set as Live'}</button>
@@ -979,7 +988,7 @@ function toolDraw(v){
       const c=state.drawn.find(x=>x.id===id);state.drawn=state.drawn.filter(x=>x.id!==id);state.rest.push(c);persist();draw();});}
   $("#ctFac",v).onchange=()=>{state=null;draw();};$("#ctDeal",v).onclick=deal;
   $("#ctDraw",v).onclick=()=>{if(!state||state.fac!==facNow()){deal();return;}if(!state.rest.length){toast("Deck empty.");return;}state.drawn.push(state.rest.shift());persist();draw();};
-  $("#ctClear",v).onclick=()=>{["drawState","drawOpName","drawLive"].forEach(k=>Store.set(k,null));state=null;toolDraw(v);toast("Contingency Draw cleared");};
+  armClear($("#ctClear",v),()=>{["drawState","drawOpName","drawLive"].forEach(k=>Store.set(k,null));state=null;toolDraw(v);toast("Contingency Draw cleared");});
   draw();
 }
 
@@ -988,17 +997,19 @@ function toolDamage(v){
   let squad=Store.get("dmgSquad",[]);
   v.innerHTML=`${toolManual("damage")}<p class="vsub">Track Blood per MERCS and resolve Armor Failure exactly by the book.</p>
    <div class="rule"><span><b>Armor Failure:</b> after a hit, roll a d10: <b>equal or higher than AF = armor holds</b>; lower = it fails. <b>AF 0 always fails.</b> A model dies when Blood reaches its BL.</span></div>
-   <div class="row"><select id="dgFac" translate="no">${factionOptions(FACTIONS_AZ[0])}</select><select id="dgUnit" translate="no"></select><button class="btn sm" id="dgAdd">+ Add</button><button class="btn ghost sm" id="dgClear">Clear page</button></div><div id="dgList"></div>`;
+   <div class="row"><select id="dgFac" translate="no">${factionOptions(FACTIONS_AZ[0])}</select><select id="dgUnit" translate="no"></select><button class="btn sm" id="dgAdd">+ Add</button></div>
+   <div class="listbar"><span class="chip">Tracking <b id="dgCount" style="margin-left:.3rem">${squad.length}</b></span><button class="btn clr" id="dgClear">Clear page</button></div><div id="dgList"></div>`;
   const STATUS=["Pinned","Disoriented","Burning","Forced","Suppressed","Armor Broken"];
   const fillUnits=()=>{$("#dgUnit",v).innerHTML=extByFaction($("#dgFac",v).value).map(u=>`<option value="${unitIndex(u)}">${esc(cap(u.name))} (BL ${esc(u.stats.BL)} · AF ${esc(u.stats.AF)})</option>`).join("");};
   const save=()=>Store.set("dmgSquad",squad);
-  function draw(){if(!squad.length){$("#dgList",v).innerHTML=`<div class="empty">Add MERCS to track their Blood and armor.</div>`;save();return;}
+  function draw(){const dc=$("#dgCount",v);if(dc)dc.textContent=squad.length;
+    if(!squad.length){$("#dgList",v).innerHTML=`<div class="empty">Add MERCS to track their Blood and armor.</div>`;save();return;}
     $("#dgList",v).innerHTML=squad.map((s,si)=>{const u=DATA.units[s.i];const bl=+u.stats.BL||0;const dead=s.blood>=bl&&bl>0;const noAF=u.stats.AF==="–"||u.stats.AF==="-"||u.stats.AF==="X";
       const pips=Array.from({length:bl},(_,k)=>`<span class="pip ${k<s.blood?'full':''}"></span>`).join("");
       return `<div class="dmg ${dead?'dead':''}"><div class="row" style="justify-content:space-between">
-          <div><span class="nm" style="font-family:var(--font-disp);font-weight:700" translate="no">${esc(cap(u.name))}</span> <span class="meta" translate="no">${esc(u.faction)} · BL ${esc(u.stats.BL)} · AF ${esc(u.stats.AF)}</span></div><button class="stog" data-del="${si}">✕</button></div>
-        <div class="bloodrow"><button class="stog" data-b="-1" data-i="${si}">−</button><div class="pips">${pips||'<span class="muted small">no Blood value</span>'}</div>
-          <button class="stog" data-b="1" data-i="${si}">+</button><span class="grow"></span><span class="${dead?'':'muted'} small" style="${dead?'color:var(--bad);font-weight:800;font-family:var(--font-disp)':''}">${dead?'KILLED':s.blood+' / '+bl}</span></div>
+          <div><span class="nm" style="font-family:var(--font-disp);font-weight:700" translate="no">${esc(cap(u.name))}</span> <span class="meta" translate="no">${esc(u.faction)} · BL ${esc(u.stats.BL)} · AF ${esc(u.stats.AF)}</span></div><button class="xbtn" data-del="${si}" aria-label="Remove ${esc(cap(u.name))}" title="Remove">✕</button></div>
+        <div class="bloodrow"><span class="steplbl">Blood</span><button class="stepb" data-b="-1" data-i="${si}" aria-label="One less Blood">−</button><div class="pips">${pips||'<span class="muted small">no Blood value</span>'}</div>
+          <button class="stepb" data-b="1" data-i="${si}" aria-label="One more Blood">+</button><span class="grow"></span><span class="${dead?'':'muted'} small" style="${dead?'color:var(--bad);font-weight:800;font-family:var(--font-disp)':''}">${dead?'KILLED':s.blood+' / '+bl}</span></div>
         <div class="row">${noAF?`<span class="chip">Does not roll for Armor Failure</span>`:`<button class="btn ghost sm" data-af="${si}">Roll armor check</button>`}
           <span class="small" style="${s.afMsg&&s.afMsg.includes('FAIL')?'color:var(--bad);font-weight:700':'color:var(--muted)'}">${esc(s.afMsg||'')}</span></div>
         <div class="statusrow">${STATUS.map(st=>`<button class="stog ${s.status.includes(st)?'on':''}" data-st="${si}|${st}">${st}</button>`).join("")}</div></div>`;}).join("");
@@ -1009,7 +1020,7 @@ function toolDamage(v){
     $$("#dgList [data-st]",v).forEach(b=>b.onclick=()=>{const[si,st]=b.dataset.st.split("|");const s=squad[+si];s.status=s.status.includes(st)?s.status.filter(x=>x!==st):[...s.status,st];draw();});
     save();}
   $("#dgFac",v).onchange=fillUnits;$("#dgAdd",v).onclick=()=>{squad.push({i:+$("#dgUnit",v).value,blood:0,status:[],afMsg:""});draw();};
-  $("#dgClear",v).onclick=()=>{squad=[];save();draw();toast("Damage tracker cleared");};
+  armClear($("#dgClear",v),()=>{squad=[];save();draw();toast("Damage tracker cleared");});
   fillUnits();draw();
 }
 
@@ -1032,7 +1043,7 @@ function toolStrike(v){
     const roster=team.members.length?`<div class="list">${team.members.map((i,pos)=>{const u=DATA.units[i];
       return `<div class="item"><img class="thumb" loading="lazy" src="${esc(u.imgFront)}" alt="">
         <span class="grow"><span class="nm" translate="no">${esc(cap(u.name))}</span><span class="meta" translate="no">${esc(u.archetype)} · BL ${esc(u.stats.BL)} · AF ${esc(u.stats.AF)}</span></span>
-        <button class="stog" data-rem="${pos}">✕</button></div>`;}).join("")}</div>`:`<div class="empty">${team.fac?'Add up to '+team.size+' members from this MegaCon.':'Pick a MegaCon to begin building.'}</div>`;
+        <button class="xbtn" data-rem="${pos}" aria-label="Remove ${esc(cap(u.name))}" title="Remove">✕</button></div>`;}).join("")}</div>`:`<div class="empty">${team.fac?'Add up to '+team.size+' members from this MegaCon.':'Pick a MegaCon to begin building.'}</div>`;
     // validation summary
     const archs=team.members.map(i=>DATA.units[i].archetype);
     const dupArch=archs.length!==new Set(archs).size;
@@ -1040,8 +1051,8 @@ function toolStrike(v){
     const vmsg=!team.fac?"":(dupArch?'<span class="bad">Duplicate archetype: not legal.</span>':(team.members.length>team.size?'<span class="bad">Over team size.</span>':(valid?'<span class="good">Legal Strike Team &#10003;</span>':'<span class="muted">Add members…</span>')));
     v.innerHTML=`${toolManual("strike")}<p class="vsub">Build a legal Strike Team: one MegaCon, no duplicate archetypes, up to your chosen size. (MERCS has no point system.)</p>
       <div class="row">${facSel}${sizeSel}</div>
-      <div class="row" style="margin-top:.6rem">${addSel}<span class="grow"></span><button class="btn ghost sm" id="stClear">Clear team</button></div>
-      <div class="tagline" style="margin-top:.6rem"><span class="chip">${team.members.length} / ${team.size}</span> ${vmsg}</div>
+      ${addSel?`<div class="row" style="margin-top:.6rem">${addSel}</div>`:''}
+      <div class="listbar"><span class="lbtxt"><span class="chip">${team.members.length} / ${team.size}</span> ${vmsg}</span><button class="btn clr" id="stClear">Clear team</button></div>
       ${roster}`;
     $("#stFac",v).onchange=e=>{const nf=e.target.value;if(nf!==team.fac){team.fac=nf||null;team.members=[];}save();render();};
     $("#stSize",v).onchange=e=>{team.size=+e.target.value;if(team.members.length>team.size)team.members=team.members.slice(0,team.size);save();render();};
@@ -1062,13 +1073,13 @@ function toolFavorites(v){
   const unitItems=f.units.map(id=>{const u=DATA.units.find(x=>x.id===id);if(!u)return"";
     return `<div class="item" role="button" tabindex="0" data-go-unit="${unitIndex(u)}"><img class="thumb" loading="lazy" src="${esc(u.imgFront)}" alt="">
       <span class="grow"><span class="nm" translate="no">${esc(cap(u.name))}</span><span class="meta" translate="no">${esc(u.faction)} · ${esc(u.archetype)}</span></span>
-      <button class="stog" data-unfav="units|${esc(id)}">✕</button><span class="ar">&#8250;</span></div>`;}).join("");
+      <button class="xbtn" data-unfav="units|${esc(id)}" aria-label="Remove ${esc(cap(u.name))} from Favorites" title="Remove">✕</button><span class="ar">&#8250;</span></div>`;}).join("");
   const contItems=f.contingency.map(key=>{const[fac,title]=favParts(key);const card=contCardsFor(fac).find(c=>c.title===title);if(!card)return"";
     return `<div class="item"><span class="grow"><span class="nm" translate="no">${esc(card.title)}</span><span class="meta" translate="no">${esc(fac)} · ${esc(card.op)}</span></span>
-      <button class="stog" data-unfav="contingency|${esc(key)}">✕</button></div>`;}).join("");
+      <button class="xbtn" data-unfav="contingency|${esc(key)}" aria-label="Remove ${esc(card.title)} from Favorites" title="Remove">✕</button></div>`;}).join("");
   const opItems=f.operations.map(id=>{const o=DATA.operations.find(x=>x.id===id);if(!o)return"";
     return `<div class="item" role="button" tabindex="0" data-go-op="${DATA.operations.indexOf(o)}"><span class="grow"><span class="nm" translate="no">${esc(o.title)}</span></span>
-      <button class="stog" data-unfav="operations|${esc(id)}">✕</button><span class="ar">&#8250;</span></div>`;}).join("");
+      <button class="xbtn" data-unfav="operations|${esc(id)}" aria-label="Remove ${esc(o.title)} from Favorites" title="Remove">✕</button><span class="ar">&#8250;</span></div>`;}).join("");
   const empty=!unitItems&&!contItems&&!opItems;
   v.innerHTML=`${toolManual("favorites")}<p class="vsub">Everything you've starred. Tap to jump to the record.</p>
     ${empty?'<div class="empty">No favorites yet. Tap the &#9733; on any unit, contingency card or operation.</div>':''}
@@ -1090,8 +1101,7 @@ function toolCompare(v){
         <select id="cmpFac" translate="no">${factionOptions(facSel)}</select>
         <select id="cmpUnit" translate="no"></select>
         <button class="btn sm" id="cmpAdd"${sel.length>=3?' disabled':''}>+ Add</button>
-        ${sel.length?'<button class="btn ghost sm" id="cmpClear">Clear all</button>':''}
-      </div>${sel.length>=3?'<div class="small muted">Comparing the maximum of three units.</div>':''}`;
+      </div>${sel.length?`<div class="listbar"><span class="lbtxt">${sel.length>=3?'3 of 3 units (the maximum)':sel.length+' of 3 units'}</span><button class="btn clr" id="cmpClear">Clear all</button></div>`:''}`;
     let body;
     if(!sel.length){
       body=`<div class="cmp-empty">Add two or three units above to stack their stats side-by-side. You can mix factions.</div>`;
@@ -1102,7 +1112,7 @@ function toolCompare(v){
           <img loading="lazy" src="${esc(u.imgFront)}" alt="">
           <span class="nm" translate="no">${esc(cap(u.name))}</span>
           <span class="fc" translate="no">${esc(u.faction)}</span>
-          <button class="rm" data-rm="${col}" aria-label="Remove">\u00d7</button>
+          <button class="xbtn rm" data-rm="${col}" aria-label="Remove ${esc(cap(u.name))}" title="Remove">✕</button>
         </div></th>`).join("");
       // stat rows with best-per-row highlight
       const rows=STAT_ORDER.map(k=>{
@@ -1111,7 +1121,7 @@ function toolCompare(v){
         const bestG=valid.length?Math.max(...valid):null;
         const cells=units.map((u,ci)=>{
           const val=u.stats[k],g=gs[ci],col=heatColor(g);
-          const isBest=g!=null&&bestG!=null&&Math.abs(g-bestG)<1e-9&&valid.length>1;
+          const isBest=g!=null&&bestG!=null&&Math.abs(g-bestG)<1e-9&&valid.length>1&&valid.filter(x=>Math.abs(x-bestG)<1e-9).length===1; /* outright best only: a tie earns no star */
           return `<td class="sv${isBest?' best':''}" style="color:${col}" translate="no">${esc(val)}</td>`;
         }).join("");
         return `<tr><th><button class="kw" onclick="statPop('${k}')" translate="no" style="background:none;border:none;padding:0;color:inherit;font:inherit;cursor:pointer">${k}</button></th>${cells}</tr>`;
@@ -1120,14 +1130,14 @@ function toolCompare(v){
       const archRow=`<tr><th>Type</th>${units.map(u=>`<td class="arch" translate="no">${esc(u.archetype)}</td>`).join("")}</tr>`;
       // weapons row
       const wRow=`<tr><th>Arms</th>${units.map(u=>{
-        const w=u.weapons.length?u.weapons.map(wp=>`<div><span class="wn" translate="no">${esc(wp.name)}</span><br><span class="bands" translate="no">B ${esc(wp.bands.B||'\u2013')} · S ${esc(wp.bands.S||'\u2013')} · M ${esc(wp.bands.M||'\u2013')} · L ${esc(wp.bands.L||'\u2013')}</span></div>`).join('<div style="height:.3rem"></div>'):'<span class="muted">\u2013</span>';
+        const w=u.weapons.length?u.weapons.map(wp=>`<div><span class="wn" translate="no">${esc(wp.name)}</span><br><span class="bands" translate="no">B\u00a0${esc(wp.bands.B||'\u2013')} · S\u00a0${esc(wp.bands.S||'\u2013')} · M\u00a0${esc(wp.bands.M||'\u2013')} · L\u00a0${esc(wp.bands.L||'\u2013')}</span></div>`).join('<div style="height:.3rem"></div>'):'<span class="muted">\u2013</span>';
         return `<td class="wpl">${w}</td>`;
       }).join("")}</tr>`;
       body=`<div class="cmp-wrap"><table class="cmp">
         <thead><tr><th></th>${heads}</tr></thead>
         <tbody>${rows}${archRow}${wRow}</tbody>
       </table></div>
-      <div class="small muted">Stat colours rank across the whole game; \u2605 marks the best in each row.</div>`;
+      <div class="small muted cmp-note">Stat colors rank across the whole game. \u2605 marks the one unit that leads a row; ties get no star.</div>`;
     }
     v.innerHTML=`${toolManual("compare")}<p class="vsub">Stack 2-3 units (any factions) and read their stats, archetype and weapons together.</p>${addBlock}${body}`;
     // wire add controls
@@ -1140,7 +1150,7 @@ function toolCompare(v){
       if(sel.includes(i)){toast("That unit is already added.");return;}
       sel.push(i);save();draw();
     };
-    if($("#cmpClear",v))$("#cmpClear",v).onclick=()=>{sel=[];save();draw();toast("Comparison cleared");};
+    if($("#cmpClear",v))armClear($("#cmpClear",v),()=>{sel=[];save();draw();toast("Comparison cleared");});
     $$("[data-rm]",v).forEach(b=>b.onclick=()=>{const c=+b.dataset.rm;sel.splice(c,1);save();draw();});
   };
   draw();
@@ -1231,9 +1241,10 @@ function markFirst(root,q){
   const lc=String(q).toLowerCase();if(!lc)return null;
   const w=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);let n;
   while((n=w.nextNode())){
-    const i=n.nodeValue.toLowerCase().indexOf(lc);
+    const v=n.nodeValue.toLowerCase(); let L=lc, i=v.indexOf(L);
+    if(i<0&&lc.indexOf("-")>=0){ L=lc.replace(/-/g,"-\u2060"); i=v.indexOf(L); }
     if(i<0)continue;
-    try{ const r=document.createRange();r.setStart(n,i);r.setEnd(n,i+lc.length);
+    try{ const r=document.createRange();r.setStart(n,i);r.setEnd(n,i+L.length);
       const mk=document.createElement("mark");mk.className="rule-hit";r.surroundContents(mk);return mk; }catch(e){ return null; }
   }
   return null;
@@ -1314,8 +1325,11 @@ function buildSearchIndex(){
   idx.forEach(r=>{r.labelLc=r.label.toLowerCase();r.lc=(r.label+" "+r.text).toLowerCase();});
   SEARCH_INDEX=idx;
 }
-function hl(text,q){if(!q)return esc(text);const i=text.toLowerCase().indexOf(q.toLowerCase());if(i<0)return esc(text);
-  return esc(text.slice(0,i))+"<mark>"+esc(text.slice(i,i+q.length))+"</mark>"+esc(text.slice(i+q.length));}
+function hl(text,q){if(!q)return nobrHy(esc(text));const i=text.toLowerCase().indexOf(q.toLowerCase());if(i<0)return nobrHy(esc(text));
+  return nobrHy(esc(text.slice(0,i))+"<mark>"+esc(text.slice(i,i+q.length))+"</mark>"+esc(text.slice(i+q.length)));}
+/* keep a hyphenated word on one line ("Non-Combat" never splits as "Non- / Combat"): a zero-width WORD JOINER (U+2060)
+   after a hyphen that sits between word characters (a <mark> edge counts) removes the line-break chance. Display only. */
+function nobrHy(h){return String(h).replace(/([A-Za-z0-9]|<\/?mark>)-(?=[A-Za-z0-9]|<\/?mark>)/g,"$1-\u2060");}
 function openSearch(){
   const s=$("#search");s.classList.add("open");
   if(!s._pushed){history.pushState({search:true},"","#search");s._pushed=true;}
@@ -1751,9 +1765,15 @@ window.toggleTheme=toggleTheme;
    OFFLINE PRECACHE — first-launch image download + indicator
    ============================================================ */
 function offReady(){try{return localStorage.getItem("mercs.offlineReady")==="1";}catch(e){return false;}}
-function showOffbar(html,done){
+/* the offline-save notice is a thin strip just under whichever bar is on top (app header, Field Tools or Search),
+   so it never sits over the content a player is reading */
+function offbarTop(){const pick=[$("#search.open .searchhead"),$("#tools.open .toolsbar"),$("header.bar")].find(e=>e&&e.offsetParent!==null);
+  return pick?Math.max(0,Math.round(pick.getBoundingClientRect().bottom)):0;}
+function showOffbar(html,done,pct){
   const b=$("#offbar");if(!b)return;
   const msg=b.querySelector(".offmsg");if(msg)msg.innerHTML=html;
+  b.style.setProperty("--offbar-top",offbarTop()+"px");
+  const f=b.querySelector(".offfill");if(f)f.style.width=(pct==null?(done?100:0):Math.max(2,Math.min(100,pct)))+"%";
   b.classList.toggle("done",!!done);
   b.classList.add("show");
 }
@@ -1764,10 +1784,10 @@ function initOffline(){
     const d=e.data||{};
     if(d.type==="precache"){
       if(offReady())return; // already done on a prior launch — stay quiet
-      showOffbar(`Saving cards for offline\u2026 <b>${d.done}/${d.total}</b>`);
+      showOffbar(`Saving cards for offline use <b>${d.done}/${d.total}</b>`,false,d.total?Math.round(d.done/d.total*100):null);
     }else if(d.type==="precache-done"){
       try{localStorage.setItem("mercs.offlineReady","1");}catch(err){}
-      showOffbar('<span class="ok">\u2713</span> Available offline',true);
+      showOffbar('<span class="ok">\u2713</span> Ready offline',true);
       setTimeout(hideOffbar,2600);
     }
   });
@@ -1906,6 +1926,7 @@ function initSyncTip(){
       `<button class="stgo" id="stGo">Sign in</button><button class="stx-close" id="stX" aria-label="Dismiss">&#10005;</button>`;
     const done=()=>{ try{localStorage.setItem("mercs.v1.synctip","1");}catch(e){} if(bar.parentNode)bar.parentNode.removeChild(bar); };
     document.body.appendChild(bar);
+    try{document.documentElement.style.setProperty("--tip-h",(bar.offsetHeight+10)+"px");}catch(e){}  /* toasts rise above the tip while it shows */
     const g=$("#stGo",bar); if(g)g.onclick=()=>{ done(); openAccount(); };
     const x=$("#stX",bar);  if(x)x.onclick=done;
   }, 1600);

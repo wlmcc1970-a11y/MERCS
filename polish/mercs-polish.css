@@ -186,3 +186,106 @@ html[data-theme="dark"] .obj.checked .box{color:#0e1c19}
 /* 44px targets: small buttons (Deal a hand, Add, Clear page, Roll initiative, the sign-in sheet's
    Just save on this device, and more) and the Field Tools back button. Size only. */
 .btn.sm,.backbtn{min-height:44px}
+
+/* ===== Walkthrough fixes, round 2 (2026-10-03): layout and type only; no game text, no data ===== */
+/* type: a short last line is pulled up so no single word sits alone (Chrome, Android, iOS 26+); short labels balance */
+p,li,.vsub,.tip,.cx,.gt,.bodytext,.small,.faq .a,.faq .q,.modnotes,.pk-empty-body,.traitcard p,footer.src{text-wrap:pretty}
+h1,h2,h3,h4,.vh,.pk-empty-title,.rnav-t,.sres .sl,.toolcard p,.tile p,.ct,.rtoc-t{text-wrap:balance}
+/* Field Manual bar: one label, never a lone word on its own line */
+.manual>summary .mttl{flex:1;min-width:0;text-wrap:balance}
+/* phone-only and tablet-only sentences in the Field Manual (700px is where the menu replaces the tab bar) */
+@media(max-width:700px){.manual .vw{display:none}}
+@media(min-width:701px){.manual .vn{display:none}}
+/* Contingency rows: name column takes the free width so every star and chevron lines up on the right */
+.controw .grow{flex:1;min-width:0}
+/* unit card header: rule chips (Quick, Deployable) are buttons with a full 44px tap area */
+.chip.chipbtn{cursor:pointer;position:relative;line-height:inherit}
+.chip.chipbtn::after{content:"";position:absolute;left:-2px;right:-2px;top:50%;height:44px;transform:translateY(-50%)}
+.chip.chipbtn:active{background:var(--orange);color:#14201e}
+/* list header bar: the list's status on the left, a quiet Clear on the right (tools no longer leave Clear alone on a line) */
+.listbar{display:flex;align-items:center;justify-content:space-between;gap:.6rem;margin:.9rem 0 .1rem;padding-bottom:.3rem;border-bottom:1px solid var(--line)}
+.listbar .lbtxt{flex:1;min-width:0;display:flex;align-items:center;flex-wrap:wrap;gap:.25rem .45rem;color:var(--muted);font-size:.8rem;line-height:1.35}
+.listbar .lbtxt b{color:var(--ink2)}
+.btn.clr{flex:none;background:transparent!important;border:1px solid transparent!important;box-shadow:none!important;color:#9b2b2b;
+  min-height:44px;padding:0 .55rem;margin-right:-.55rem;font-size:.72rem;letter-spacing:.1em}
+.btn.clr:active{background:rgba(192,57,43,.08)!important}
+html[data-theme="dark"] .btn.clr{color:#ec8a7f}
+.btn.clr.armed{background:#7a1f1f!important;border-color:#9b2b2b!important;color:#fff;margin-right:0}
+.actrow{margin-top:.6rem}.actrow>.btn{flex:1 1 0;min-width:0}
+/* remove buttons: 44px, labelled for screen readers */
+.xbtn{flex:none;width:44px;height:44px;min-height:44px;display:inline-flex;align-items:center;justify-content:center;padding:0;
+  border:1px solid var(--line2);background:var(--surface2);color:var(--muted);border-radius:10px;font-size:.95rem;line-height:1;cursor:pointer}
+.xbtn:active{background:var(--surface3)}
+.cmp .uh .xbtn.rm{width:44px;height:44px;margin-top:.15rem;color:var(--bad);background:var(--surface);font-size:.9rem;border-radius:10px}
+/* labelled steppers (Round Tracker IM mod, Damage Blood) */
+.stepper{display:inline-flex;align-items:center;gap:.4rem}
+.steplbl{font-family:var(--font-disp);font-weight:700;font-size:.66rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);white-space:nowrap}
+.stepb{flex:none;width:44px;height:44px;min-height:44px;display:inline-flex;align-items:center;justify-content:center;padding:0;
+  border:1px solid var(--line2);background:var(--surface2);color:var(--ink);border-radius:10px;font-size:1.25rem;font-weight:700;line-height:1;cursor:pointer}
+.stepb:active{background:var(--orange);color:#14201e;border-color:var(--orange-d)}
+.stepv{min-width:2.2ch;text-align:center;font-family:var(--font-hero);font-size:1rem;color:var(--ink);font-variant-numeric:tabular-nums}
+.trkitem{flex-wrap:wrap}
+.trkitem>.grow{flex:1;min-width:0}
+.trkctl{flex:1 1 100%;display:flex;align-items:center;justify-content:space-between;gap:.5rem;border-top:1px dashed var(--line);padding-top:.5rem}
+.bloodrow{flex-wrap:wrap}
+.bloodrow .grow{flex:1}
+/* status toggles and Live card: 44px tall */
+.stog{min-height:44px;min-width:44px}
+/* rules: Previous / Next section, each with its label and the section name below */
+.rnav{display:grid;grid-template-columns:1fr 1fr;gap:.6rem;align-items:stretch}
+.rnav-b{display:flex;flex-direction:column;justify-content:center;gap:.25rem;min-width:0;min-height:64px;padding:.6rem .75rem;text-align:left;
+  border:1px solid var(--line2);border-radius:11px;background:var(--surface);color:var(--ink);cursor:pointer;box-shadow:var(--shadow-s)}
+.rnav-b:active{background:var(--surface2)}
+.rnav-b:focus-visible{outline:2px solid var(--orange)}
+.rnav-n{text-align:right;align-items:flex-end}
+.rnav-k{font-family:var(--font-disp);font-weight:700;font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;color:var(--orange-d);white-space:nowrap}
+.rnav-t{font-family:var(--font-disp);font-weight:600;font-size:.86rem;line-height:1.3;color:var(--ink)}
+/* search: a worded Cancel so it never looks like the field's own clear button */
+.searchcancel{flex:none;min-height:44px;padding:0 .55rem;margin-right:-.3rem;background:none;border:0;border-radius:9px;color:#fff;
+  font-family:var(--font-body);font-weight:600;font-size:.95rem;cursor:pointer}
+.searchcancel:active{background:rgba(0,0,0,.22)}
+.searchcancel:focus-visible{outline:2px solid var(--orange)}
+/* empty states read as a sentence, not a heavy all-caps headline */
+.pk-empty .pk-empty-title{font-family:var(--font-body);font-weight:600;font-size:1rem;line-height:1.45;letter-spacing:0;text-transform:none;
+  color:var(--ink2);max-width:30ch;margin-left:auto;margin-right:auto}
+/* Compare: three units fit a 360px phone; a soft edge shadow shows when the table can still scroll sideways */
+@media(max-width:480px){
+  table.cmp thead th{min-width:0}
+  table.cmp th,table.cmp td{padding:.4rem .3rem}
+  table.cmp tbody th{min-width:0}
+  .cmp .uh .nm{font-size:.72rem}
+}
+.cmp-wrap{background:
+  linear-gradient(90deg,var(--surface) 30%,transparent) left/24px 100% no-repeat local,
+  linear-gradient(270deg,var(--surface) 30%,transparent) right/24px 100% no-repeat local,
+  radial-gradient(farthest-side at 0 50%,rgba(16,34,31,.22),transparent) left/12px 100% no-repeat scroll,
+  radial-gradient(farthest-side at 100% 50%,rgba(16,34,31,.22),transparent) right/12px 100% no-repeat scroll,
+  var(--surface)}
+.cmp-note{margin-top:.2rem}
+/* sign-in tip sits at the bottom, clear of the header's Search and Menu buttons; toasts rise above it */
+#syncTip{top:auto;bottom:calc(var(--pk-dock,0px) + 12px + var(--safe-b))}
+body:has(.pk-offline.on) #syncTip{bottom:calc(var(--pk-dock,0px) + 64px + var(--safe-b))}
+/* offline-save notice: a thin strip under the top bar instead of a box over the content */
+.offbar{top:var(--offbar-top,64px);bottom:auto!important;left:50%;transform:translate(-50%,-4px);width:100%;max-width:780px;height:30px;
+  padding:0 1rem;border-radius:0;border:0;justify-content:center;gap:.45rem;font-size:.74rem;font-weight:600;letter-spacing:.01em;
+  background:rgba(14,40,36,.94);color:#e8f3f1;box-shadow:0 6px 12px -8px rgba(0,0,0,.5);overflow:hidden;z-index:56;white-space:nowrap}
+.offbar.show{transform:translate(-50%,0)}
+.offbar .spin{width:12px;height:12px;border-width:2px}
+.offbar .offfill{position:absolute;left:0;bottom:0;height:2px;width:0;background:var(--cyan,#1fa9be);transition:width .3s ease}
+html[data-theme="dark"] .offbar{background:rgba(34,64,58,.96);border:0}
+body:has(.offbar.show) .toast{bottom:calc(var(--pk-dock,0px) + 1rem + var(--safe-b))}
+body:has(#syncTip) .toast{bottom:calc(var(--pk-dock,0px) + 1rem + var(--safe-b) + var(--tip-h,96px))}
+/* status lines built from short parts wrap between whole parts, never leaving a separator at the start of a line */
+.listbar .lbtxt .seg{white-space:nowrap}
+.listbar .lbtxt .seg+.seg{padding-left:.55rem;border-left:1px solid var(--line2)}
+/* tool bar: "Tools" back button and the tool name each stay on one line at 360px */
+.backbtn{white-space:nowrap;flex:none}
+.toolsbar h2{white-space:nowrap;min-width:0;font-size:min(1rem,4.1vw)}
+#syncTip .stx{text-wrap:pretty}
+/* segmented toggles keep their label and count together */
+.segb{white-space:nowrap}
+@media(max-width:400px){.segb{padding:.5rem .62rem;letter-spacing:.02em}}
+/* narrow phones: Previous and Next stack full width so section names read in one or two lines */
+@media(max-width:480px){.rnav{grid-template-columns:1fr}.rnav-sp{display:none}}
+/* search deep links land below the sticky header (same offset the keyword fix uses) */
+.controw,.opcard,.corphead,.modcard{scroll-margin-top:calc(76px + var(--safe-t,0px))}
