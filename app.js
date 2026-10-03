@@ -285,7 +285,7 @@ const MANUAL={
 };
 /* keep the last two words of a Field Manual line together so no line ends with one word alone at any width
    (layout only: a nowrap span, the text is unchanged). Skipped when the tail is inside markup. */
-function glueEnd(h){return String(h).replace(/([^\s<>]+) ([^\s<>]+)$/,'<span class="nw">$1 $2</span>');}
+function glueEnd(h){return String(h).replace(/([^\s<>]+) ([^\s<>]+)$/,'<span class="nw nwe">$1 $2</span>');}
 function manual(id){const m=MANUAL[id];if(!m)return "";
   return `<details class="manual ${manualCue()}"><summary><span class="mico">${ICO.book}</span><span class="mttl">How to use this page</span><span class="tw">&#9656;</span></summary>
     <div class="mbody"><ol>${m.steps.map(s=>`<li>${glueEnd(s)}</li>`).join("")}</ol>${m.tip?`<div class="tip">&#9733; ${glueEnd(m.tip)}</div>`:""}</div></details>`;}
@@ -1450,7 +1450,25 @@ function xlProtected(t){
 
 /* ---------- which text nodes may be translated ---------- */
 const XL_SKIP='[translate="no"],.notranslate,#gte,#xlbar,#pop,script,style,noscript,svg,select,textarea,input,code,pre,.langlist';
+/* The no-split spans (.nw) are presentation only. While a language is active they are unwrapped so each sentence reaches the
+   translator whole (exactly as before the spans existed); the parent is flagged and the spans come back when English returns. */
+function nwUnwrap(root){
+  (root||document.body).querySelectorAll("span.nw").forEach(sp=>{const pa=sp.parentNode;if(!pa||sp.closest('[translate="no"],.notranslate'))return;
+    pa.setAttribute("data-nw",(pa.getAttribute("data-nw")||"")+(sp.classList.contains("nwe")?"e":"h"));
+    pa.replaceChild(document.createTextNode(sp.textContent),sp);pa.normalize();});
+}
+function nwRewrap(){
+  document.querySelectorAll("[data-nw]").forEach(pa=>{const f=pa.getAttribute("data-nw");pa.removeAttribute("data-nw");
+    if(f.indexOf("h")>=0){const w=document.createTreeWalker(pa,NodeFilter.SHOW_TEXT);const list=[];let n;while((n=w.nextNode()))list.push(n);
+      list.forEach(n=>{if(!n.parentNode||(n.parentElement&&n.parentElement.closest("span.nw")))return;const t=n.nodeValue,re=/[A-Za-z0-9]+(?:-[A-Za-z0-9]+)+/g;let m,pos=0;const fr=document.createDocumentFragment();
+        while((m=re.exec(t))){fr.appendChild(document.createTextNode(t.slice(pos,m.index)));const x=document.createElement("span");x.className="nw";x.textContent=m[0];fr.appendChild(x);pos=m.index+m[0].length;}
+        if(pos){fr.appendChild(document.createTextNode(t.slice(pos)));n.parentNode.replaceChild(fr,n);}});}
+    if(f.indexOf("e")>=0){const last=pa.lastChild;const m=last&&last.nodeType===3&&last.nodeValue.match(/^([\s\S]*?)(\S+ \S+)$/);
+      if(m){const x=document.createElement("span");x.className="nw nwe";x.textContent=m[2];last.nodeValue=m[1];pa.appendChild(x);}}
+  });
+}
 function xlNodes(root){
+  nwUnwrap(root);
   const out=[];
   const w=document.createTreeWalker(root||document.body,NodeFilter.SHOW_TEXT,null);
   let n;
@@ -1592,7 +1610,7 @@ async function setTranslate(code){
   try{
     xlUnobserve();
     xlRevert();                                   /* always start from the real English */
-    if(!code){XL.lang="";try{localStorage.removeItem(XL_LANGKEY);}catch(e){}
+    if(!code){nwRewrap();XL.lang="";try{localStorage.removeItem(XL_LANGKEY);}catch(e){}
       xlBarHide();toast("Showing the original English");return;}
     xlBar("Preparing "+xlName(code)+"…",null);
     await xlNativeTranslate(code,xlNodes(document.body),false);
@@ -1602,7 +1620,7 @@ async function setTranslate(code){
     toast("Translated to "+xlName(code)+". Game terms stay in English");
     xlObserve();
   }catch(e){
-    xlRevert();XL.lang="";xlBarHide();
+    xlRevert();nwRewrap();XL.lang="";xlBarHide();
     toast("Couldn’t translate: a connection is needed the first time you use a language.");
   }finally{XL.busy=false;}
 }

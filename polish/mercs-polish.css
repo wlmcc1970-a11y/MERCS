@@ -292,3 +292,6 @@ body:has(#syncTip) .toast{bottom:calc(var(--pk-dock,0px) + 1rem + var(--safe-b) 
 /* search deep links land below the sticky header (same offset the keyword fix uses) */
 .controw,.opcard,.corphead,.modcard{scroll-margin-top:calc(76px + var(--safe-t,0px))}
 .nw{white-space:nowrap}
+/* the first-run sign-in tip steps aside while a sheet, Field Tool, search or the menu is open, and returns after */
+body:has(#pop.open) #syncTip,body:has(#tools.open) #syncTip,body:has(#search.open) #syncTip,body:has(#navMenu.open) #syncTip{display:none}
+body:has(#pop.open) .toast,body:has(#tools.open) .toast,body:has(#search.open) .toast{bottom:calc(var(--pk-dock,0px) + 1rem + var(--safe-b))}
