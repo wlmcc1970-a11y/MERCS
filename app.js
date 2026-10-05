@@ -1641,10 +1641,12 @@ async function xlRestore(){
 }
 
 /* ---------- picker ---------- */
+/* Translate hand-off URL carries app=translate so the store-only guard keeps the app open in Safari. */
+function XL_HANDOFF_URL(){try{return (function(){var u=location.href.split('#'),h=u[1]?'#'+u[1]:'';return u[0]+(u[0].indexOf('?')>-1?'&':'?')+'app=translate'+h;})();}catch(e){return location.href;}}
 function xlSafariHandoff(){
   try{if(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.openInSafari){
-    window.webkit.messageHandlers.openInSafari.postMessage(location.href);return;}}catch(e){}
-  window.open(location.href,"_blank","noopener");
+    window.webkit.messageHandlers.openInSafari.postMessage(XL_HANDOFF_URL());return;}}catch(e){}
+  window.open(XL_HANDOFF_URL(),"_blank","noopener");
 }
 window.xlSafariHandoff=xlSafariHandoff;
 
