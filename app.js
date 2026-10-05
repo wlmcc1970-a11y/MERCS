@@ -382,7 +382,7 @@ const ICO={
    ROUTER — 7 content tabs as lazy-built panels
    ============================================================ */
 /* Visible app version (About screen). Bump together with CACHE="mercs-vNN" in sw.js on every release. */
-const APP_VERSION="32";
+const APP_VERSION="33";
 const TABS=[
  {id:"home",t:"Home",ico:ICO.home},
  {id:"megacons",t:"MegaCons",ico:ICO.mega},
@@ -1200,11 +1200,15 @@ function deepGoCont(fac,title){
   rebuildPanel("contingency");
   navTo("contingency");
   const slug=SLUG(title);
-  requestAnimationFrame(()=>{
+  /* The tab change animates (Polish Kit), so the panel may not be built on the next frame when coming
+     from another tab. Wait (up to ~3 s) until the card row exists, then reveal it. */
+  let tries=0;
+  const go=()=>{
     const panel=$("#panel-contingency");
-    if(panel&&panel._contReveal)panel._contReveal(slug);
-    scrollToRecord("rec-cont-"+slug);
-  });
+    if(panel&&panel._contReveal&&$("#rec-cont-"+slug,panel)){panel._contReveal(slug);scrollToRecord("rec-cont-"+slug);return;}
+    if(++tries<180)requestAnimationFrame(go);
+  };
+  requestAnimationFrame(go);
 }
 function deepGoCorp(fac){
   Store.set("corpFac",fac);
@@ -1924,6 +1928,8 @@ function openAccount(){
     armClear($("#siClear"),()=>{clearSavedData();popClose();});
     const _p=$("#siPriv"); if(_p)_p.onclick=(e)=>{e.preventDefault();popClose();openAbout();};
   }else{
+    /* signed out of cloud sync earlier: the last synced copy can still sit on this device, so offer a way to clear it */
+    let leftover=false; try{leftover=localStorage.getItem(SAVE_LOCAL)!=null||hasLocalData();}catch(e){}
     popOpen(`<h4>Sign in to sync</h4>
       <p class="small muted">This device is not saving your selections. Sign in to keep your favorites, strike teams and trackers and sync them across all your devices, or just save them on this device.</p>
       <div class="signin-official">
@@ -1931,10 +1937,12 @@ function openAccount(){
         <button class="asi-btn" id="siApple">${ALOGO}<span>Sign in with Apple</span></button>
       </div>
       <div class="row" style="margin-top:.2rem"><button class="btn ghost sm" id="siDevice">Just save on this device</button></div>
+      ${leftover?'<div class="row" style="margin-top:.35rem"><button class="btn ghost sm" id="siClear">Clear saved data on this device</button></div><p class="small muted" style="margin-top:.4rem">A copy of your selections from your last sign-in is still on this device. Clearing deletes it here. Your synced account is not affected.</p>':''}
       <p class="small muted" style="margin-top:.55rem">Signing in creates a private account that stores only your in-app selections. No tracking, no ads. You can delete it anytime. <a href="#" id="siPriv" class="dr-link">Privacy</a>.</p>`);
     $("#siGoogle").onclick=()=>{if(window.__mercsSync)window.__mercsSync.signInGoogle();};
     $("#siApple").onclick=()=>{if(window.__mercsSync)window.__mercsSync.signInApple();};
     $("#siDevice").onclick=()=>{signInDevice();popClose();};
+    if(leftover)armClear($("#siClear"),()=>{clearSavedData();popClose();});
     const _p=$("#siPriv"); if(_p)_p.onclick=(e)=>{e.preventDefault();popClose();openAbout();};
   }
 }
