@@ -1205,7 +1205,8 @@ function deepGoCont(fac,title){
   let tries=0;
   const go=()=>{
     const panel=$("#panel-contingency");
-    if(panel&&panel._contReveal&&$("#rec-cont-"+slug,panel)){panel._contReveal(slug);scrollToRecord("rec-cont-"+slug);return;}
+    if(panel&&panel._contReveal&&$("#rec-cont-"+slug,panel)){panel._contReveal(slug);scrollToRecord("rec-cont-"+slug);
+      setTimeout(()=>{const r=$("#rec-cont-"+slug,panel);if(r&&r.classList.contains("open")){const top=r.getBoundingClientRect().top;if(top<0||top>innerHeight*0.6)r.scrollIntoView({behavior:"smooth",block:"start"});}},450);return;}
     if(++tries<180)requestAnimationFrame(go);
   };
   requestAnimationFrame(go);
@@ -1929,7 +1930,7 @@ function openAccount(){
     const _p=$("#siPriv"); if(_p)_p.onclick=(e)=>{e.preventDefault();popClose();openAbout();};
   }else{
     /* signed out of cloud sync earlier: the last synced copy can still sit on this device, so offer a way to clear it */
-    let leftover=false; try{leftover=localStorage.getItem(SAVE_LOCAL)!=null||hasLocalData();}catch(e){}
+    let leftover=false; try{const raw=localStorage.getItem(SAVE_LOCAL);const o=raw?JSON.parse(raw):null;leftover=!!(o&&typeof o==='object'&&Object.keys(o).length);}catch(e){}
     popOpen(`<h4>Sign in to sync</h4>
       <p class="small muted">This device is not saving your selections. Sign in to keep your favorites, strike teams and trackers and sync them across all your devices, or just save them on this device.</p>
       <div class="signin-official">

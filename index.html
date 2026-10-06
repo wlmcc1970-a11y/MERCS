@@ -284,13 +284,14 @@ select{min-width:140px}
 .pop{position:fixed;inset:0;background:rgba(11,26,24,.55);display:none;align-items:flex-end;justify-content:center;z-index:80}
 .pop.open{display:flex}
 .popcard{position:relative;background:var(--surface);border:1px solid var(--line2);border-top:4px solid var(--olive);border-radius:16px 16px 0 0;width:100%;max-width:780px;
-  padding:1rem 1.1rem calc(1.2rem + var(--safe-b));box-shadow:var(--shadow);animation:up .2s ease}
+  padding:1rem 1.1rem calc(1.2rem + var(--safe-b));box-shadow:var(--shadow);animation:up .2s ease;
+  max-height:calc(100dvh - .75rem);overflow-y:auto;overscroll-behavior:contain}
 @keyframes up{from{transform:translateY(20px);opacity:.6}to{transform:none;opacity:1}}
 .popcard h4{margin:.1rem 0 .2rem;font-size:1.15rem;color:var(--ink);text-transform:uppercase}
 .popx{position:absolute;top:.45rem;right:.55rem;z-index:2;width:44px;height:44px;min-height:44px;display:flex;align-items:center;justify-content:center;border:1px solid var(--line2);background:var(--surface2);color:var(--muted);border-radius:9px;font-size:1rem;line-height:1;cursor:pointer}
 .popx:hover{border-color:var(--orange);color:var(--orange-d)}
 .popx::after{content:"";position:absolute;inset:-2px}
-.popcard>h4:first-of-type{padding-right:2.4rem}
+.popcard>h4:first-of-type{padding-right:2.9rem;min-height:40px}
 
 .popcard .bw{display:inline-block;margin-top:.5rem;font-size:.78rem;padding:.2rem .55rem;border-radius:6px;font-weight:700;font-family:var(--font-disp);
   background:#eaf3ea;color:var(--good);border:1px solid var(--good)}
