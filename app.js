@@ -54,7 +54,8 @@ const RULE_SUBHEAD_RE=new RegExp("(^|[.!?:\\u2026]\\s+|\\s)("+RULE_SUBHEADS.map(
 function ruleProse(seg){
   const flowed=String(seg==null?"":seg).replace(/[ \t]*\n[ \t]*/g," ").replace(/\s+/g," ").trim();
   if(!flowed) return "";
-  const marked=flowed.replace(RULE_SUBHEAD_RE,(m,pre,ph)=>pre+"\u0002"+ph+"\u0003");
+  /* headings pre-marked by markCapsHeads stay as they are; the known-subhead regex only runs on the text between them */
+  const marked=flowed.split(/(\u0002.+?\u0003)/).map(p=>p.charAt(0)==="\u0002"?p:p.replace(RULE_SUBHEAD_RE,(m,pre,ph)=>pre+"\u0002"+ph+"\u0003")).join("");
   const chunks=marked.split(/\u0002(.+?)\u0003/);
   let html="";
   for(let i=0;i<chunks.length;i++){
@@ -382,7 +383,7 @@ const ICO={
    ROUTER — 7 content tabs as lazy-built panels
    ============================================================ */
 /* Visible app version (About screen). Bump together with CACHE="mercs-vNN" in sw.js on every release. */
-const APP_VERSION="33";
+const APP_VERSION="34";
 const TABS=[
  {id:"home",t:"Home",ico:ICO.home},
  {id:"megacons",t:"MegaCons",ico:ICO.mega},
@@ -733,8 +734,15 @@ function ruleFigs(s){
 /* full body of a core section (heading is rendered by the single-section view) */
 function coreSectionBody(s){
   const tbls=(s.tables&&s.tables.length)?s.tables.map(tableHTML).join(""):"";
-  return `${renderRuleBody(stripPageNo(s.body))}${ruleFigs(s)}${tbls}`;
+  return `${renderRuleBody(markCapsHeads(stripRunHead(stripPageNo(s.body))))}${ruleFigs(s)}${tbls}`;
 }
+/* display-only: the rulebook's printed page header ("Game rules", "What You need") sits as the first line of some
+   core sections; it is page furniture, not rules text, so it is not shown. data.js is untouched. */
+function stripRunHead(b){return String(b==null?"":b).replace(/^[ \t]*(?:Game rules|What You need)[ \t]*\n/,"");}
+/* display-only: a line that stands alone in capitals in the transcription is a rulebook heading; mark it so it renders
+   as a subhead even when it is not in RULE_SUBHEADS. Words are unchanged. [FIGURE ...] lines are never touched. */
+function markCapsHeads(b){return String(b==null?"":b).split("\n").map(l=>{const t=l.trim();
+  return (t.length>=4&&!/^\[/.test(t)&&!/[a-z]/.test(t)&&/[A-Z]{3}/.test(t)&&/^[A-Z0-9 \u2019'&\/().,:-]+$/.test(t))?"\u0002"+t+"\u0003":l;}).join("\n");}
 /* display-only: drop the printed page number the PDF transcription left as the last line of some core sections
    (e.g. "...cannot Blitz during this Movement.\n23"). Only a bare 1-2 digit last line that follows a finished
    sentence is removed; data.js is untouched and nothing else changes. */
