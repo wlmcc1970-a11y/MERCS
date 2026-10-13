@@ -41,6 +41,13 @@
   var UA = navigator.userAgent || "";
   var IN_WRAPPER = /PWAShell|MERCSApp/.test(UA);
   var USE_REDIRECT = /Android|iPhone|iPad|iPod|Mobi/i.test(UA);  // mobile web: redirect is more reliable than a popup
+  /* iOS app shell (WKWebView with native sign-in bridge). Firebase's default getAuth() opens a hidden
+     helper iframe from the sign-in domain on iOS; the iOS shell treats ANY frame on that domain as a
+     sign-in page and shows its "Done" toolbar button (the stray blue checkmark behind the clock on
+     iOS 26). In the iOS shell we start auth WITHOUT the popup/redirect helper, so that iframe never
+     loads. Sign-in there goes through the native bridge; the helper is passed in only on the rare
+     fallback calls that genuinely need it. Web and Android behave exactly as before. (2026-10-12) */
+  var IOS_SHELL = IN_WRAPPER && !!(window.webkit && window.webkit.messageHandlers);
   function nativeHandler(name){
     try { return !!(window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers[name]); }
     catch(e){ return false; }
@@ -107,7 +114,10 @@
   ]).then(function(m){
     var appMod=m[0], authMod=m[1], fsMod=m[2];
     var app = appMod.initializeApp(cfg);
-    var auth = authMod.getAuth(app);
+    var auth = IOS_SHELL
+      ? authMod.initializeAuth(app, { persistence: [authMod.indexedDBLocalPersistence, authMod.browserLocalPersistence, authMod.browserSessionPersistence] })
+      : authMod.getAuth(app);
+    var RESOLVER = authMod.browserPopupRedirectResolver;   // passed explicitly where a popup/redirect is used
     var db  = fsMod.getFirestore(app);
 
     var googleProvider = new authMod.GoogleAuthProvider();
@@ -115,7 +125,7 @@
     appleProvider.addScope('email'); appleProvider.addScope('name');
 
     var currentUser=null, unsub=null, pushTimer=null, firstAuthCb=true;
-    authMod.getRedirectResult(auth).catch(function(){});   // finalize a mobile redirect sign-in
+    if(!IOS_SHELL) authMod.getRedirectResult(auth).catch(function(){});   // finalize a mobile redirect sign-in (not used in the iOS shell)
 
     function docRef(uid){ return fsMod.doc(db,'users',uid); }
     function setStatus(t){ api.statusText=t; var e=document.getElementById('acSync'); if(e)e.textContent=t; }
@@ -141,18 +151,18 @@
     api.signInGoogle = function(){
       setStatus('Opening Google sign-in...');
       if(IN_WRAPPER && nativeHandler('startGoogleSignIn')){ postNative('startGoogleSignIn'); return; }
-      if(USE_REDIRECT){ authMod.signInWithRedirect(auth, googleProvider); return; }
-      authMod.signInWithPopup(auth, googleProvider).catch(function(e){
-        if(e && (e.code==='auth/popup-blocked' || e.code==='auth/operation-not-supported-in-this-environment')){ authMod.signInWithRedirect(auth, googleProvider); return; }
+      if(USE_REDIRECT){ authMod.signInWithRedirect(auth, googleProvider, RESOLVER); return; }
+      authMod.signInWithPopup(auth, googleProvider, RESOLVER).catch(function(e){
+        if(e && (e.code==='auth/popup-blocked' || e.code==='auth/operation-not-supported-in-this-environment')){ authMod.signInWithRedirect(auth, googleProvider, RESOLVER); return; }
         setStatus('Sign-in did not complete - tap to try again'); toast('Sign-in did not complete');
       });
     };
     api.signInApple = function(){
       setStatus('Opening Apple sign-in...');
       if(IN_WRAPPER && nativeHandler('startAppleSignIn')){ postNative('startAppleSignIn'); return; }
-      if(USE_REDIRECT){ authMod.signInWithRedirect(auth, appleProvider); return; }
-      authMod.signInWithPopup(auth, appleProvider).catch(function(e){
-        if(e && (e.code==='auth/popup-blocked' || e.code==='auth/operation-not-supported-in-this-environment')){ authMod.signInWithRedirect(auth, appleProvider); return; }
+      if(USE_REDIRECT){ authMod.signInWithRedirect(auth, appleProvider, RESOLVER); return; }
+      authMod.signInWithPopup(auth, appleProvider, RESOLVER).catch(function(e){
+        if(e && (e.code==='auth/popup-blocked' || e.code==='auth/operation-not-supported-in-this-environment')){ authMod.signInWithRedirect(auth, appleProvider, RESOLVER); return; }
         setStatus('Sign-in did not complete - tap to try again'); toast('Sign-in did not complete');
       });
     };
@@ -188,7 +198,7 @@
           setStatus('Please sign in again to confirm deletion');
           var isApple = u.providerData && u.providerData[0] && u.providerData[0].providerId==='apple.com';
           var prov = isApple ? appleProvider : googleProvider;
-          authMod.reauthenticateWithPopup(u, prov).then(function(){ api.deleteAccount(); }).catch(function(){ toast('Could not confirm - please try again'); });
+          authMod.reauthenticateWithPopup(u, prov, RESOLVER).then(function(){ api.deleteAccount(); }).catch(function(){ toast('Could not confirm - please try again'); });
         } else {
           toast('Delete failed - please try again'); setStatus('Cloud sync on');
         }
