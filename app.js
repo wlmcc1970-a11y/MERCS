@@ -383,7 +383,7 @@ const ICO={
    ROUTER — 7 content tabs as lazy-built panels
    ============================================================ */
 /* Visible app version (About screen). Bump together with CACHE="mercs-vNN" in sw.js on every release. */
-const APP_VERSION="34";
+const APP_VERSION="36";
 const TABS=[
  {id:"home",t:"Home",ico:ICO.home},
  {id:"megacons",t:"MegaCons",ico:ICO.mega},
@@ -1694,7 +1694,8 @@ function openAbout(){
   popOpen(`<h4>About &amp; Privacy</h4>
     <p class="small" style="color:var(--ink2)">The official MERCS Companion by <a href="https://digirunestudios.com" target="_blank" rel="noopener" class="dr-link"><b>DigiRune Studios</b></a>. A complete field reference for the MERCS 2.5 tabletop game: every unit, contingency card, corporate trait, operation, rule, modifier and keyword, plus seven battlefield tools and your Favorites.</p>
     <h4 style="font-size:1rem;margin-top:.8rem">Privacy</h4>
-    <p class="small" style="color:var(--ink2)">The app works fully offline and shows <b>no ads</b>. Without signing in it collects <b>no personal data</b>: your favorites, strike teams and trackers are saved only on this device, and nothing leaves it. You can clear them anytime from <b>Sign In</b>. Signing in with <b>Google</b> or <b>Apple</b> is optional and adds sync: it creates a private account so your selections <b>sync across your devices</b>. We then store only your name, email and your in-app selections, using Google Firebase (Authentication + Firestore) as the processor. We never sell your data or use it for ads. You can delete your account and all synced data anytime from <b>Sign In &rarr; Delete account &amp; data</b>, or read the full policy and deletion steps at <a href="https://mercs.digirunestudios.com/privacy.html" target="_blank" rel="noopener" class="dr-link">mercs.digirunestudios.com/privacy</a>.</p>
+    <p class="small" style="color:var(--ink2)">The app works fully offline and shows <b>no ads</b>. Without signing in it collects <b>no personal data</b>: your favorites, strike teams and trackers are saved only on this device, and nothing leaves it. You can clear them anytime from <b>Sign In</b>. Signing in with <b>Google</b> or <b>Apple</b> is optional and adds sync: it creates a private account so your selections <b>sync across your devices</b>. We then store only your name, email and your in-app selections, using Google Firebase (Authentication + Firestore) as the processor. We never sell your data or use it for ads. If you send a note with <b>Report a problem or suggest an idea</b>, we receive what you write, the app version and your device type, plus your email only if you add it. You can delete your account and all synced data anytime from <b>Sign In &rarr; Delete account &amp; data</b>, or read the full policy and deletion steps at <a href="https://mercs.digirunestudios.com/privacy.html" target="_blank" rel="noopener" class="dr-link">mercs.digirunestudios.com/privacy</a>.</p>
+    <p class="small" style="margin-top:.7rem"><a href="#" data-feedback class="dr-link">Report a problem or suggest an idea</a></p>
     <h4 style="font-size:1rem;margin-top:.8rem">Credits &amp; License</h4>
     <p class="small" style="color:var(--ink2)">MERCS&trade; &copy; Fifth Angel Studios. Used under license. All stats, cards and rules are transcribed verbatim from the MERCS 2.5 source. Interface icons are hand-authored by DigiRune Studios; fonts (Oswald, Days One, Barlow) are served from Google Fonts under the SIL Open Font License.</p>
     <p class="small" style="color:var(--ink2);margin-top:.6rem">Version ${APP_VERSION}</p>
